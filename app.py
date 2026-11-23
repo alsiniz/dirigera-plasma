@@ -1096,10 +1096,13 @@ class MainWindow(QMainWindow):
         self.update_tray_tooltip()
         # On KDE Wayland Plasma may own the original tooltip. This extra Qt
         # tooltip is best effort, while the native SNI tooltip is always updated.
-        try:
-            QToolTip.showText(QCursor.pos(), text)
-        except Exception:
-            pass
+        # An unparented Qt tooltip cannot be displayed reliably under Wayland.
+        # Plasma already presents our native SNI tooltip and brightness OSD.
+        if QApplication.platformName().lower() != "wayland":
+            try:
+                QToolTip.showText(QCursor.pos(), text)
+            except Exception:
+                pass
         if self.tray_sni and self._sni_ready:
             self.tray_sni.show_feedback(text)
 
