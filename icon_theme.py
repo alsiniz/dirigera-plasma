@@ -37,6 +37,9 @@ def search_paths(qt_paths=()):
     xdg_home = Path(os.environ.get('XDG_DATA_HOME', str(Path.home() / '.local/share')))
     xdg_dirs = os.environ.get('XDG_DATA_DIRS', '/usr/local/share:/usr/share').split(':')
     paths = [xdg_home / 'icons', Path.home() / '.icons']
+    # Flatpak exposes system/user icons under /run/host, not the runtime's /usr.
+    if os.environ.get('FLATPAK_ID'):
+        paths += [Path('/run/host/share/icons'), Path('/run/host/user-share/icons')]
     paths += [Path(entry) / 'icons' for entry in xdg_dirs if entry]
     paths += [Path(path) for path in qt_paths]
     result = []
