@@ -17,6 +17,8 @@ python3 -m venv "$TOOLS_DIR/venv"
 "$TOOLS_DIR/venv/bin/python" "$TOOLS_DIR/tools/pip/flatpak-pip-generator.py" \
   --runtime="org.kde.Sdk//$BRANCH" \
   --requirements-file="$FLATPAK_DIR/requirements-flatpak.txt" \
+  --prefer-wheels=pydantic-core \
+  --wheel-arches=x86_64 \
   --output="$FLATPAK_DIR/python3-deps"
 test -f "$FLATPAK_DIR/python3-deps.json" || { echo 'Missing pip dependencies manifest' >&2; exit 1; }
 flatpak-builder --user --install-deps-from=flathub --force-clean --repo="$ROOT/flatpak-repo" \
