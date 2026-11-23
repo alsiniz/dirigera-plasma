@@ -257,7 +257,14 @@ class StatusNotifierTray:
         self.done = None
         self.item = None
         self.bus = None
-        self.service_name = f"org.kde.StatusNotifierItem-{os.getpid()}-1"
+        # Flatpak permits owning names under its application ID by default.
+        # The usual org.kde.StatusNotifierItem-PID-1 name is rejected by Flatpak
+        # (invalid as a sandbox --own-name wildcard), although Plasma accepts it.
+        self.service_name = (
+            f"io.github.alsiniz.DirigeraPlasma.Tray{os.getpid()}"
+            if os.environ.get("FLATPAK_ID")
+            else f"org.kde.StatusNotifierItem-{os.getpid()}-1"
+        )
         self.menu_probe = 'not attempted'
         self.thread = threading.Thread(target=self._thread_main, name='dirigera-plasma-tray', daemon=True)
 
