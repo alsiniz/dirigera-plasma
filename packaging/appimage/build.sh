@@ -14,6 +14,10 @@ APPDIR="$ROOT/AppDir"
 rm -rf "$APPDIR"
 mkdir -p "$APPDIR/usr/bin" "$APPDIR/usr/share/icons/hicolor/scalable/apps" "$APPDIR/usr/share/doc/dirigera-plasma"
 cp -a dist/dirigera-plasma/. "$APPDIR/usr/bin/"
+# Prefer the host Fontconfig implementation. An older bundled libfontconfig
+# cannot parse current Fedora/Bazzite font rules (e.g. 48-guessfamily.conf).
+# Qt/Freetype remain bundled. Revalidate on each supported distro before release.
+rm -f "$APPDIR/usr/bin/_internal/libfontconfig.so.1"
 cp "assets/io.github.alsiniz.DirigeraPlasma.svg" "$APPDIR/usr/share/icons/hicolor/scalable/apps/"
 cp "packaging/flatpak/io.github.alsiniz.DirigeraPlasma.desktop" "$APPDIR/"
 cp "assets/io.github.alsiniz.DirigeraPlasma.svg" "$APPDIR/io.github.alsiniz.DirigeraPlasma.svg"
