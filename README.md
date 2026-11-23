@@ -7,7 +7,7 @@ Control your lights from the desktop or system tray, see room temperature and hu
 [![License: MIT](https://img.shields.io/badge/License-MIT-2ea44f.svg)](LICENSE)
 [![Platform: Linux / KDE Plasma](https://img.shields.io/badge/Platform-Linux%20%7C%20KDE%20Plasma-1d99f3.svg)](#requirements)
 
-> **Development preview:** DIRIGERA Plasma is not yet a stable release. Source installation is available; Flatpak and AppImage packages are being prepared and are **not yet verified for distribution**. The graphical token-generation flow still needs testing against a physical hub.
+> **Development preview:** DIRIGERA Plasma is not yet a stable release. Source installation is available; Flatpak and AppImage packages are being prepared and are **not yet verified for distribution**. The GUI token-generation flow has passed a fresh-install test with a physical DIRIGERA hub on Bazzite; packaged Flatpak/AppImage installations still require validation.
 
 <p align="center">
   <img src="docs/screenshots/main-window.png" alt="DIRIGERA Plasma's main window showing approved room and individual light controls" width="900">
@@ -89,7 +89,7 @@ The app is **authorizing access to your existing hub**, not pairing the light bu
   <img src="docs/screenshots/gui-pairing.png" alt="In-app token generation dialog guiding the user through authorizing DIRIGERA Plasma with the physical hub button" width="520">
 </p>
 
-> **Development status:** The graphical pairing dialog is implemented, but end-to-end authorization has not yet been confirmed through a fresh physical-hub test.
+> **Development status:** GUI hub authorization succeeded during a fresh-install test on Bazzite. The AppImage and Flatpak variants still require their own end-to-end tests.
 
 ## Control from the Plasma tray
 
@@ -127,6 +127,12 @@ Choose an app icon from the icon theme already installed and selected in KDE Pla
 - No cloud connection or external account is required for day-to-day control. Opening the optional Ko-fi link uses your browser, by choice.
 - The app uses the **unofficial, undocumented local DIRIGERA API**. IKEA firmware updates could affect compatibility.
 
+## Universal packages (preview)
+
+Experimental **AppImage** and **Flatpak** builders are being tested in [the packaging pull request](https://github.com/alsiniz/dirigera-plasma/pull/1). The source installation above is the currently documented method; **neither binary is yet an official v1.0.0 release**.
+
+Once the package builds finish, the artifacts will be available through GitHub Actions. Flatpak uses application ID `io.github.alsiniz.DirigeraPlasma`, with local network and KDE tray permissions. A Flatpak install stores credentials separately from a source install, so you authorize the hub again using the GUI.
+
 ## Troubleshooting
 
 | Symptom | Try this |
@@ -143,7 +149,7 @@ More technical details are available in [TESTING.md](TESTING.md), [SECURITY.md](
 
 ## Roadmap
 
-- Validate graphical token generation against a real hub.
+- Verify graphical token generation inside the AppImage and Flatpak packages.
 - Test installations on additional KDE Plasma distributions.
 - Validate Flatpak and AppImage builds, then publish convenient downloadable packages.
 - Finish real-device regression tests and publish a stable release.
