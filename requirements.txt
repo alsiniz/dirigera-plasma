@@ -1,0 +1,4 @@
+# Installed into the user's Python virtual environment. No system packages.
+dirigera>=1.5,<2
+PySide6>=6.8,<7
+dbus-next>=0.2.3,<1

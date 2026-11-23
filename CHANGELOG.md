@@ -1,0 +1,111 @@
+# Changelog
+
+## Unreleased development build 1.0.0-dev.7 (2026-11-22)
+
+- Added a **Generate token** button beside the masked Access token field in
+  Hub settings. It stays disabled for blank and malformed hub addresses.
+- Built an asynchronous, cancelable GUI pairing flow around the existing
+  local `dirigera` authentication helper. Press DIRIGERA's physical action
+  button, click Continue, and the generated token populates the field. The
+  user explicitly saves it; no terminal, shell, clipboard, or token log.
+- Enlarged Hub settings to avoid clipping the DHCP reservation guidance.
+- Credited **alsiniz** as project creator and maintainer, linking to the
+  project repository from the About dialog.
+- Left the known-working Plasma native tray menu, wheel and middle-click
+  implementation untouched. Remains an unreleased test build.
+
+## Unreleased development build 1.0.0-dev.6 (2026-11-22)
+
+- Tidied main-window buttons: **Choose devices** and **Tray settings** no
+  longer end with ellipses.
+- Renamed **Tray icon** to **App icon** in system tray settings and added a
+  dedicated shortcut explanation covering scroll-to-dim and middle-click toggle.
+- Added DHCP reservation advice to Hub settings to keep DIRIGERA's local address stable.
+- Added an About dialog **Support on Ko-fi** button linking to
+  https://ko-fi.com/alsiniz. No embedded browser or automatic network requests.
+- Removed the brightness OSD's unnecessary icon by passing an empty icon name
+  to Plasma's `showText` method; kept text and command timing unchanged.
+- Preserved dev.5's working native Plasma right-click menu, wheel and middle-click,
+  the MIT license, and approved-device safety model. Public release still paused.
+
+
+## Unreleased development build 1.0.0-dev.5 (2026-11-22)
+
+- Fixed the native D-BusMenu `GetLayout` serialization failure reported by
+  Bazzite/Python 3.15: `dbus-next` requires lists for D-Bus STRUCT values,
+  including those nested inside `Variant('(ia{sv}av)', ...)`.
+- Fixed `GetGroupProperties` to return nested list structs as well, avoiding
+  a related failure when Plasma inspects menu-item properties.
+- Removed the top-level **System tray** menu bar and placed **Input diagnostics…**
+  inside **Tray settings…**. Removed the redundant diagnostics action from
+  the native tray menu, while retaining its accessible settings entry.
+- Added regression checks for nested D-Bus struct types, submenu properties,
+  and access to the diagnostics button inside the settings dialog.
+- Preserved the working tray wheel/middle-click, MIT license, approved-light
+  safety checks, and clear token-security notice. Not a public release.
+
+## Unreleased development build 1.0.0-dev.4 (2026-11-22)
+
+- **Not release-ready:** Native right-click now works on the tester's KDE Plasma,
+  but tray wheel events are regressed. This is an investigation build, **not** a
+  claimed scroll fix. Middle-click still works.
+- Added D-Bus-side Scroll call count and last-delta diagnostics, separate from
+  the Qt GUI scroll-event record. This distinguishes Plasma not forwarding the
+  wheel from the application failing to process a forwarded event.
+- Icon picker now reads the selected KDE icon theme from `kdeglobals`, scans
+  user/system-installed theme files and inherited themes, and uses Qt's
+  theme-native rendering when available. No icon pack is bundled.
+- Retained the native Plasma menu, per-device controls, slider wheel behavior,
+  MIT License and user-friendly hub-token security wording.
+- GitHub and Flatpak/AppImage publication remain paused.
+
+# Changelog
+
+## Unreleased development build 1.0.0-dev.2 (2026-11-22)
+
+- Fixed mouse-wheel changes to brightness and Kelvin sliders not reaching DIRIGERA. Commands are debounced (250 ms) and retain per-device approval checks.
+- Disabled unreliable D-BusMenu import by default using KDE's `/NO_DBUSMENU` convention, making native right-click call `ContextMenu` and open a compositor-positioned tray-actions window instead of off-screen QMenu popups.
+- Added D-BusMenu self-test and menu request diagnostics; native Plasma right-click remains under real-device verification.
+- Corrected D-BusMenu root node properties for compatibility.
+- Replaced the proposed noncommercial source-available license with the standard MIT License.
+- Rewrote the About dialog's access-token security note in plain language.
+- Paused all public release and binary packaging until menu and slider behavior are confirmed on KDE Plasma.
+
+# Changelog
+
+## [1.0.0-rc.1] - 2026-11-22
+
+First public release candidate, renamed **DIRIGERA Plasma**.
+
+### Added
+- Plasma-rendered native D-BusMenu for right-click actions, replacing the Qt
+  popup's unreliable Wayland positioning.
+- About dialog with version, third-party dependencies, protocol credits and
+  independent-project disclaimer.
+- Repository documentation, issue template, offline/Qt tests, experimental Flatpak and AppImage build workflows, and release notes.
+- Automatic one-time migration of the previous `dirigera-desktop` configuration
+  (hub token, device/sensor approvals, room and icon selection).
+
+### Changed
+- Brightness scroll notifications now show the target percentage without the
+  word "pending"; command debouncing remains at 600 ms.
+- Display name, desktop entry and configuration path use DIRIGERA Plasma.
+- Clicks on the brightness and temperature slider tracks now send commands, while dragging still applies on release.
+- Source license restricts commercialized derivatives (not an OSI open-source license).
+- Ctrl+Q cleanly quits the app even if the tray menu is inaccessible.
+
+### Retained from the private 0.x prototypes
+- Separate per-device and approved-room controls; live HSV colour wheel.
+- Kelvin, brightness, and on/off controls subject to bulb capabilities.
+- Temperature and humidity readings from related TIMMERFLOTTE endpoints.
+- Tray wheel brightness, middle-click toggle, and Breeze icon selection.
+- Deny-by-default device ID + room ID validation before lighting commands.
+
+### Known limitations
+- The local DIRIGERA API is undocumented and may change in hub firmware.
+- Native D-BusMenu has not yet been tested in the user's running Plasma session;
+  this version is a release **candidate** until that regression is confirmed fixed.
+- Changes to different bulbs are not atomic; interruption during a group write
+  can leave partially changed lighting states.
+- The stored token is plaintext in a user-private (0600) file and has hub-wide
+  privileges; app authorization is a safety constraint, not a hub permission.
