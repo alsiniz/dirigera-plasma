@@ -57,6 +57,7 @@ Exec=$APP/run.sh
 Icon=weather-clear
 Terminal=false
 Categories=Utility;Settings;
+StartupWMClass=dirigera-plasma
 StartupNotify=true
 EOF
 chmod 644 "$LAUNCHERS/dirigera-plasma.desktop"
