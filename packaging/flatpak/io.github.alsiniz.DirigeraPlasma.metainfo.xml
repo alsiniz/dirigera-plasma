@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.alsiniz.DirigeraPlasma</id>
+  <name>DIRIGERA Plasma</name>
+  <summary>Control IKEA DIRIGERA lights from KDE Plasma without the cloud</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <url type="homepage">https://github.com/alsiniz/dirigera-plasma</url>
+  <url type="bugtracker">https://github.com/alsiniz/dirigera-plasma/issues</url>
+  <url type="donation">https://ko-fi.com/alsiniz</url>
+  <description>
+    <p>DIRIGERA Plasma connects directly to an existing IKEA DIRIGERA hub on your local network. Control approved lights from KDE Plasma, adjust brightness and colour, and monitor climate sensors without a cloud account or another hub.</p>
+  </description>
+  <launchable type="desktop-id">io.github.alsiniz.DirigeraPlasma.desktop</launchable>
+  <categories><category>Utility</category></categories>
+  <content_rating type="oars-1.1"/>
+</component>

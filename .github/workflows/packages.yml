@@ -1,0 +1,46 @@
+name: Experimental Linux package builds
+on:
+  workflow_dispatch:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  appimage:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install system prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1 libegl1 libxkbcommon-x11-0 libxcb-cursor0 curl
+          curl -fL --retry 3 -o "$RUNNER_TEMP/appimagetool.AppImage" \
+            'https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage'
+          chmod +x "$RUNNER_TEMP/appimagetool.AppImage"
+          printf '#!/bin/sh\nAPPIMAGE_EXTRACT_AND_RUN=1 exec "%s" "$@"\n' \
+            "$RUNNER_TEMP/appimagetool.AppImage" | sudo tee /usr/local/bin/appimagetool >/dev/null
+          sudo chmod +x /usr/local/bin/appimagetool
+      - name: Build portable AppImage
+        run: ./packaging/appimage/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DIRIGERA-Plasma-AppImage-x86_64
+          path: DIRIGERA-Plasma-x86_64.AppImage
+          if-no-files-found: error
+  flatpak:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Flatpak build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder python3 python3-venv git
+      - name: Build Flatpak bundle
+        run: ./packaging/flatpak/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DIRIGERA-Plasma-Flatpak-x86_64
+          path: dirigera-plasma.flatpak
+          if-no-files-found: error

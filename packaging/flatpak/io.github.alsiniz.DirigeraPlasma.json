@@ -1,0 +1,50 @@
+{
+  "app-id": "io.github.alsiniz.DirigeraPlasma",
+  "runtime": "org.kde.Platform",
+  "runtime-version": "6.10",
+  "sdk": "org.kde.Sdk",
+  "base": "io.qt.PySide.BaseApp",
+  "base-version": "6.10",
+  "command": "dirigera-plasma",
+  "build-options": {
+    "env": {
+      "BASEAPP_REMOVE_WEBENGINE": "1",
+      "BASEAPP_DISABLE_NUMPY": "1"
+    }
+  },
+  "cleanup-commands": [
+    "/app/cleanup-BaseApp.sh"
+  ],
+  "finish-args": [
+    "--share=network",
+    "--socket=wayland",
+    "--socket=fallback-x11",
+    "--talk-name=org.kde.StatusNotifierWatcher",
+    "--talk-name=org.freedesktop.StatusNotifierWatcher",
+    "--talk-name=org.kde.plasmashell",
+    "--filesystem=xdg-config/kdeglobals:ro",
+    "--filesystem=xdg-data/icons:ro"
+  ],
+  "modules": [
+    "python3-deps.json",
+    {
+      "name": "dirigera-plasma",
+      "buildsystem": "simple",
+      "build-commands": [
+        "install -d /app/bin /app/lib/dirigera-plasma /app/share/applications /app/share/icons/hicolor/scalable/apps /app/share/doc/dirigera-plasma /app/share/metainfo",
+        "install -m 644 app.py core.py tray_sni.py tray_compat.py tray_menu_model.py icon_theme.py pairing.py version.py /app/lib/dirigera-plasma/",
+        "install -m 755 packaging/flatpak/dirigera-plasma /app/bin/dirigera-plasma",
+        "install -m 644 packaging/flatpak/io.github.alsiniz.DirigeraPlasma.desktop /app/share/applications/",
+        "install -m 644 assets/io.github.alsiniz.DirigeraPlasma.svg /app/share/icons/hicolor/scalable/apps/",
+        "install -m 644 packaging/flatpak/io.github.alsiniz.DirigeraPlasma.metainfo.xml /app/share/metainfo/",
+        "install -m 644 LICENSE THIRD_PARTY_NOTICES.md /app/share/doc/dirigera-plasma/"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "../.."
+        }
+      ]
+    }
+  ]
+}

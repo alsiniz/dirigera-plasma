@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0] - 2026-11-23
+
+First stable release, distributing the **x86_64 AppImage**. Verified on Bazzite KDE Plasma with fresh in-app DIRIGERA pairing and local lighting controls.
+
+- Native Plasma tray scroll-to-dim, middle-click toggle, right-click actions, climate tooltip and brightness OSD.
+- Per-room and per-light controls, live colour wheel, supported colour-temperature changes, and explicit device approval for shared homes.
+- GUI-only token authorization and active KDE icon-theme integration.
+- Improved room/individual-control visual hierarchy and main-window identity.
+- AppImage packaging fixes for host Fontconfig and Wayland tooltip warnings; a nonfatal portal registration warning may remain during direct portable execution.
+- Flatpak built in CI, **held for runtime validation** and not included in this release.
+
 ## Unreleased development build 1.0.0-dev.7 (2026-11-22)
 
 - Added a **Generate token** button beside the masked Access token field in

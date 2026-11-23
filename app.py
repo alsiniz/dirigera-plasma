@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import os
 import queue
 import sys
 from pathlib import Path
@@ -1095,10 +1096,13 @@ class MainWindow(QMainWindow):
         self.update_tray_tooltip()
         # On KDE Wayland Plasma may own the original tooltip. This extra Qt
         # tooltip is best effort, while the native SNI tooltip is always updated.
-        try:
-            QToolTip.showText(QCursor.pos(), text)
-        except Exception:
-            pass
+        # An unparented Qt tooltip cannot be displayed reliably under Wayland.
+        # Plasma already presents our native SNI tooltip and brightness OSD.
+        if QApplication.platformName().lower() != "wayland":
+            try:
+                QToolTip.showText(QCursor.pos(), text)
+            except Exception:
+                pass
         if self.tray_sni and self._sni_ready:
             self.tray_sni.show_feedback(text)
 
@@ -1403,12 +1407,31 @@ class MainWindow(QMainWindow):
             content = QWidget()
             column = QVBoxLayout(content)
             column.setSpacing(12)
-            group = QGroupBox(f"Room controls   ·   {len(lights)} approved bulb(s) only")
+            section_font = content.font()
+            section_font.setBold(True)
+            room_title = QLabel("Room controls")
+            room_title.setObjectName("roomControlsHeading")
+            room_title.setFont(section_font)
+            column.addWidget(room_title)
+            group = QGroupBox(f"{room_name} · {len(lights)} approved light(s)")
+            group.setObjectName("approvedRoomControls")
+            group.setToolTip("These controls affect only approved lights in this room.")
             group_layout = QVBoxLayout(group)
             self.add_controls(group_layout, lights, is_group=True)
             column.addWidget(group)
+            divider = QFrame()
+            divider.setObjectName("roomDeviceDivider")
+            divider.setFrameShape(QFrame.Shape.HLine)
+            divider.setFrameShadow(QFrame.Shadow.Sunken)
+            column.addWidget(divider)
+            devices_title = QLabel("Individual lights")
+            devices_title.setObjectName("individualLightsHeading")
+            devices_title.setFont(section_font)
+            column.addWidget(devices_title)
             for light in lights:
                 box = QGroupBox(light.name + ("  ·  offline" if not light.reachable else ""))
+                box.setObjectName("individualLightControls")
+                box.setToolTip("Controls only this approved light.")
                 box_layout = QVBoxLayout(box)
                 self.add_controls(box_layout, [light])
                 column.addWidget(box)
@@ -1471,7 +1494,14 @@ class MainWindow(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
-    app.setApplicationName(APP_NAME)
+    # Use the desktop entry's ID for consistent KDE Plasma panel window previews.
+    desktop_id = os.environ.get("FLATPAK_ID") or (
+        "io.github.alsiniz.DirigeraPlasma"
+        if os.environ.get("APPIMAGE") else "dirigera-plasma"
+    )
+    app.setDesktopFileName(desktop_id)
+    app.setApplicationName("dirigera-plasma")
+    app.setApplicationDisplayName(APP_NAME)
     app.setQuitOnLastWindowClosed(False)
     window = MainWindow()
     window.setWindowIcon(window._selected_qicon())

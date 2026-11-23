@@ -1,0 +1,36 @@
+name: Offline tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile source
+        run: python -m compileall -q app.py core.py tray_sni.py tray_compat.py tray_menu_model.py icon_theme.py pairing.py version.py inventory.py
+      - name: Test offline safety and menu logic
+        run: python -m unittest discover -p 'test_*.py' -v
+  qt-ui-tests:
+    runs-on: ubuntu-24.04
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install application dependencies
+        run: pip install -r requirements.txt
+      - name: Test Qt sliders and pairing
+        run: python -m unittest test_ui -v
+      - name: Test native D-Bus menu
+        run: dbus-run-session -- python -m unittest test_tray_dbus -v
