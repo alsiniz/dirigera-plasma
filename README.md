@@ -9,9 +9,11 @@ Control your lights from the desktop or system tray, see room temperature and hu
 
 > **Development preview:** DIRIGERA Plasma is not yet a stable release. Source installation is available; Flatpak and AppImage packages are being prepared and are **not yet verified for distribution**. The graphical token-generation flow still needs testing against a physical hub.
 
-<!-- HERO SCREENSHOT: Once a privacy-checked capture is available, insert:
-![DIRIGERA Plasma's light controls in KDE Plasma](docs/screenshots/main-window.png)
--->
+<p align="center">
+  <img src="docs/screenshots/main-window.png" alt="DIRIGERA Plasma's main window showing approved room and individual light controls" width="900">
+</p>
+
+<p align="center"><sub>Room-wide and individual light controls, styled by KDE Plasma.</sub></p>
 
 ## Why DIRIGERA Plasma?
 
@@ -28,13 +30,21 @@ Your smart lights shouldn't require unlocking your phone every time you want to 
 
 The app provides per-device and per-room power, brightness, colour temperature, and a **live colour wheel** for bulbs that support colour changes. Changes to the colour wheel are previewed on the lights as you move it.
 
-**Screenshots being prepared:** the main window, live colour wheel, tray tooltip and menu, device approvals, and graphical hub authorization. See the [screenshot checklist](docs/screenshots/README.md). Screenshots will be inserted here once captured and checked for private household information.
+### Live colour control
 
-<!-- SCREENSHOT GALLERY: Add these images as they become available.
-![Live colour-wheel selection](docs/screenshots/colour-wheel.png)
-![Temperature and humidity in the Plasma tray tooltip](docs/screenshots/tray-tooltip.png)
-![Native KDE Plasma tray context menu](docs/screenshots/tray-menu.png)
--->
+Move the colour wheel to preview changes immediately on your approved RGB lights, without closing the picker after every adjustment.
+
+<p align="center">
+  <img src="docs/screenshots/colour-wheel.png" alt="Live colour wheel for RGB light control" width="520">
+</p>
+
+### At a glance, without opening a window
+
+A hover reveals room climate readings. Scroll over the tray icon to change brightness, middle-click to toggle your approved room lights, or right-click for native Plasma actions.
+
+| Climate readings on hover | Native Plasma tray menu |
+| :---: | :---: |
+| <img src="docs/screenshots/tray-tooltip.png" alt="KDE Plasma tray tooltip showing temperature, humidity and shortcuts" width="395"> | <img src="docs/screenshots/tray-menu.png" alt="Native KDE Plasma tray context menu" width="270"> |
 
 ## Requirements
 
@@ -75,10 +85,11 @@ The app is **authorizing access to your existing hub**, not pairing the light bu
 
 **Tip:** Reserve a consistent IP address for DIRIGERA in your router's DHCP settings so the hub remains reachable at the saved address. Router instructions vary by manufacturer.
 
-<!-- GUI SETUP SCREENSHOTS: Insert after real-hub testing:
-![GUI authorization step](docs/screenshots/gui-pairing.png)
-![Explicit device approval screen](docs/screenshots/device-approval.png)
--->
+<p align="center">
+  <img src="docs/screenshots/gui-pairing.png" alt="In-app token generation dialog guiding the user through authorizing DIRIGERA Plasma with the physical hub button" width="520">
+</p>
+
+> **Development status:** The graphical pairing dialog is implemented, but end-to-end authorization has not yet been confirmed through a fresh physical-hub test.
 
 ## Control from the Plasma tray
 
@@ -94,9 +105,21 @@ Brightness scrolling shows a brief on-screen percentage and combines rapid wheel
 
 For finer control, open the window to change individual bulbs or approved bulbs within a room. The **Climate** tab provides read-only sensor information, including combined temperature and humidity data from supported split-endpoint devices such as IKEA TIMMERFLOTTE.
 
+### Match your Plasma theme
+
+Choose an app icon from the icon theme already installed and selected in KDE Plasma. No Breeze icons or separate icon packs are bundled with DIRIGERA Plasma.
+
+<p align="center">
+  <img src="docs/screenshots/icon-picker.png" alt="Icon picker browsing icons from the active KDE Plasma icon theme" width="520">
+</p>
+
 ## Shared households and privacy
 
 **Only explicitly approved bulbs receive commands from DIRIGERA Plasma.** Device approvals are tied to device IDs, not simply names. Room controls are restricted to approved lights, and if a bulb moves to another room, it must be reviewed and approved again. New devices are not approved automatically.
+
+<p align="center">
+  <img src="docs/screenshots/device-approval.png" alt="Device approval screen showing selective light and read-only sensor permissions in a shared home" width="570">
+</p>
 
 **Important:** These restrictions apply to **this app**, not to the hub's access token. That token can potentially control *all* devices on the shared DIRIGERA hub. Someone who obtains it could use other software to control other residents' devices. Keep it private, just as you would a password.
 
@@ -123,7 +146,7 @@ More technical details are available in [TESTING.md](TESTING.md), [SECURITY.md](
 - Validate graphical token generation against a real hub.
 - Test installations on additional KDE Plasma distributions.
 - Validate Flatpak and AppImage builds, then publish convenient downloadable packages.
-- Add documentation screenshots and finish release testing.
+- Finish real-device regression tests and publish a stable release.
 
 See [CHANGELOG.md](CHANGELOG.md) for development history. The public stable release is intentionally on hold until these checks pass.
 
