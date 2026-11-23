@@ -7,7 +7,7 @@ Control your lights from the desktop or system tray, see room temperature and hu
 [![License: MIT](https://img.shields.io/badge/License-MIT-2ea44f.svg)](LICENSE)
 [![Platform: Linux / KDE Plasma](https://img.shields.io/badge/Platform-Linux%20%7C%20KDE%20Plasma-1d99f3.svg)](#requirements)
 
-> **Development preview:** DIRIGERA Plasma is not yet a stable release. Source installation is available; Flatpak and AppImage packages are being prepared and are **not yet verified for distribution**. The GUI token-generation flow has passed a fresh-install test with a physical DIRIGERA hub on Bazzite; packaged Flatpak/AppImage installations still require validation.
+> **v1.0.0 is available as a Linux x86_64 AppImage.** Tested with KDE Plasma on Bazzite, including a clean graphical pairing flow and local lighting/tray controls. The Flatpak is still undergoing runtime testing and is **not yet a published release asset**.
 
 <p align="center">
   <img src="docs/screenshots/main-window.png" alt="DIRIGERA Plasma's main window showing approved room and individual light controls" width="900">
@@ -51,13 +51,26 @@ A hover reveals room climate readings. Scroll over the tray icon to change brigh
 - **Linux with KDE Plasma** (Plasma 6 is the primary development target; currently tested on Bazzite/KDE Plasma).
 - An **IKEA DIRIGERA smart home hub**, already configured with supported lights and/or climate sensors through IKEA Home Smart.
 - The PC and hub on a **mutually reachable local network**.
-- For the current source installer: **Python 3.11+**, Python virtual environment support (`python3 -m venv`), and internet access to download Python dependencies **once**.
+- For **source installation only**: Python 3.11+, virtual environment support (`python3 -m venv`), and internet access to download Python dependencies once. The AppImage bundles its dependencies.
 
 **No additional Matter controller, Thread dongle, or Home Assistant installation is required.** Your existing DIRIGERA hub continues managing its devices. This app talks to the hub's unofficial local API; it does not re-pair your bulbs or administer the Thread network itself.
 
 ## Install
 
-**Source installation (development preview)**
+### AppImage (recommended for v1.0.0)
+
+Download `DIRIGERA-Plasma-v1.0.0-x86_64.AppImage` from the [latest GitHub release](https://github.com/alsiniz/dirigera-plasma/releases/latest). This portable package needs no root privileges, separate smart-home hub, or Python setup.
+
+```bash
+chmod +x DIRIGERA-Plasma-v1.0.0-x86_64.AppImage
+./DIRIGERA-Plasma-v1.0.0-x86_64.AppImage
+```
+
+For convenience you may integrate the AppImage into your application launcher using a tool that supports AppImages; direct execution remains supported. An optional **nonfatal portal app-ID warning** may appear when starting directly from a download folder because the portable app is not registered as an installed desktop application.
+
+**Platform:** Linux x86_64 with KDE Plasma. Bazzite/KDE Plasma has been verified. Other Linux distributions may work but have not yet been individually tested.
+
+### Source installation (alternative)
 
 ```bash
 git clone https://github.com/alsiniz/dirigera-plasma.git
@@ -89,7 +102,7 @@ The app is **authorizing access to your existing hub**, not pairing the light bu
   <img src="docs/screenshots/gui-pairing.png" alt="In-app token generation dialog guiding the user through authorizing DIRIGERA Plasma with the physical hub button" width="520">
 </p>
 
-> **Development status:** GUI hub authorization succeeded during a fresh-install test on Bazzite. The AppImage and Flatpak variants still require their own end-to-end tests.
+> **Verified:** The AppImage's GUI pairing process succeeded from a clean configuration on Bazzite. Flatpak pairing remains untested.
 
 ## Control from the Plasma tray
 
@@ -127,11 +140,15 @@ Choose an app icon from the icon theme already installed and selected in KDE Pla
 - No cloud connection or external account is required for day-to-day control. Opening the optional Ko-fi link uses your browser, by choice.
 - The app uses the **unofficial, undocumented local DIRIGERA API**. IKEA firmware updates could affect compatibility.
 
-## Universal packages (preview)
+## Package availability
 
-Experimental **AppImage** and **Flatpak** builders are being tested in [the packaging pull request](https://github.com/alsiniz/dirigera-plasma/pull/1). The source installation above is the currently documented method; **neither binary is yet an official v1.0.0 release**.
+| Format | v1.0.0 availability | Status |
+| --- | --- | --- |
+| **AppImage (x86_64)** | [GitHub Releases](https://github.com/alsiniz/dirigera-plasma/releases/latest) | Tested on Bazzite / KDE Plasma, including clean in-app pairing |
+| **Source installer** | This repository | Available; requires a one-time Python dependency download |
+| **Flatpak** | Not published | Builds in GitHub Actions, but actual KDE Plasma runtime behavior and pairing still need validation |
 
-Once the package builds finish, the artifacts will be available through GitHub Actions. Flatpak uses application ID `io.github.alsiniz.DirigeraPlasma`, with local network and KDE tray permissions. A Flatpak install stores credentials separately from a source install, so you authorize the hub again using the GUI.
+AppImage can run without installation, whereas Flatpak uses application ID `io.github.alsiniz.DirigeraPlasma` and has its own sandboxed configuration. When Flatpak becomes available, it will need separate GUI hub authorization on first launch.
 
 ## Troubleshooting
 
@@ -149,12 +166,12 @@ More technical details are available in [TESTING.md](TESTING.md), [SECURITY.md](
 
 ## Roadmap
 
-- Verify graphical token generation inside the AppImage and Flatpak packages.
-- Test installations on additional KDE Plasma distributions.
-- Validate Flatpak and AppImage builds, then publish convenient downloadable packages.
-- Finish real-device regression tests and publish a stable release.
+- **Flatpak:** validate hub pairing, desktop permissions, climate tooltip, native menu, tray wheel, and middle-click on KDE Plasma; then add the verified bundle to a future release.
+- **Wider Linux compatibility:** run AppImage smoke tests on additional KDE Plasma distributions and document limitations.
+- **Desktop integration:** provide optional AppImage launcher registration for a cleaner portal identity.
+- **Maintenance:** monitor IKEA DIRIGERA firmware changes affecting its unofficial local API.
 
-See [CHANGELOG.md](CHANGELOG.md) for development history. The public stable release is intentionally on hold until these checks pass.
+See [CHANGELOG.md](CHANGELOG.md) for the v1.0.0 release history and ongoing fixes.
 
 ## Built with and thanks
 
