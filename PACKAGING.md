@@ -1,23 +1,26 @@
-# Packaging pre-release checklist
+# Packaging
 
-This branch provides experimental x86_64 AppImage and Flatpak builds. Run **Actions → Experimental Linux package builds → Run workflow** after merging. Both builds download dependencies. Do not publish v1.0.0 until the artifacts are installed and tested on a KDE Plasma desktop.
+## v1.0.0
 
-## Downloadable artifacts
-- `DIRIGERA-Plasma-x86_64.AppImage` (PyInstaller, appimagetool). Use `chmod +x` then run it.
-- `dirigera-plasma.flatpak` (KDE runtime 6.10, PySide6 BaseApp). Install with `flatpak install --user ./dirigera-plasma.flatpak`, launch with `flatpak run io.github.alsiniz.DirigeraPlasma`.
+The initial official release distributes **only** `DIRIGERA-Plasma-v1.0.0-x86_64.AppImage` through [GitHub Releases](https://github.com/alsiniz/dirigera-plasma/releases). The AppImage is portable across many x86_64 Linux distributions, but **Bazzite KDE Plasma is the only environment explicitly verified so far**.
 
-The Flatpak requests LAN networking, KDE StatusNotifierWatcher access, a narrowly scoped tray name, Plasma OSD, and read-only KDE icon-theme settings. It does not request full home-directory access. Credentials and approved devices are stored separately inside the Flatpak sandbox, so reauthorize the hub in the GUI on first Flatpak launch.
+Build: `./packaging/appimage/build.sh`. CI runs `.github/workflows/release-appimage.yml`, uploads the AppImage and `SHA256SUMS.txt`, and tags the commit `v1.0.0`.
 
-## Acceptance checks (both formats)
-- [ ] First launch and GUI hub authorization work
-- [ ] Approved-device safety rules; other household lights cannot be controlled
-- [ ] Room and individual light brightness, power, Kelvin and RGB wheel
-- [ ] Tray hover climate tooltip
-- [ ] Tray wheel changes brightness with an OSD
-- [ ] Tray middle-click toggles approved bulbs
-- [ ] Native right-click menu opens consistently and Quit works
-- [ ] Icon picker shows installed KDE icon theme
-- [ ] Program shuts down cleanly and relaunches
-- [ ] Third-party licenses and MIT license are included
+A direct portable run may emit a nonfatal XDG desktop-portal app-ID warning because the AppImage is not installed as a registered desktop application.
 
-These builds are for testing first. A GitHub release and Flathub submission are separate follow-up steps.
+## Flatpak (experimental, not included in v1.0.0)
+
+The Flatpak CI build succeeds but has **not** been run and approved on a real KDE Plasma session. Do not distribute it until its integration is validated. It uses `io.github.alsiniz.DirigeraPlasma` with scoped networking and D-Bus permissions and separate sandboxed credentials.
+
+Build locally: `./packaging/flatpak/build.sh`. Install an experimental bundle with `flatpak install --user ./dirigera-plasma.flatpak`.
+
+## Minimum runtime checks
+
+- Fresh install / GUI DIRIGERA hub authorization
+- Explicit device approval and multi-resident household safeguards
+- Per-room and per-device RGB, brightness, colour temperature and power
+- Tray climate tooltip, scroll brightness, middle-click toggle, right-click native menu and Quit
+- Theme integration, icon picker, and window title
+- License/third-party notices and absence of stored credentials in build artifacts
+
+Do not claim universal distro support from CI build success alone.
