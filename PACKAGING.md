@@ -1,14 +1,14 @@
 # Packaging
 
-## v1.0.0
+## AppImage
 
-The initial official release distributes **only** `DIRIGERA-Plasma-v1.0.0-x86_64.AppImage` through [GitHub Releases](https://github.com/alsiniz/dirigera-plasma/releases). The AppImage is portable across many x86_64 Linux distributions, but **Bazzite KDE Plasma is the only environment explicitly verified so far**.
+The stable Linux release distributes `DIRIGERA-Plasma-v1.0.1-x86_64.AppImage` through [GitHub Releases](https://github.com/alsiniz/dirigera-plasma/releases). The AppImage is portable across many x86_64 Linux distributions, but **Bazzite KDE Plasma is the only environment explicitly verified so far**.
 
-Build: `./packaging/appimage/build.sh`. CI runs `.github/workflows/release-appimage.yml`, uploads the AppImage and `SHA256SUMS.txt`, and tags the commit `v1.0.0`.
+Build: `./packaging/appimage/build.sh`. CI runs `.github/workflows/release-appimage.yml`, uploads the AppImage and `SHA256SUMS.txt`, and tags the build commit with the version from `version.py`.
 
 A direct portable run may emit a nonfatal XDG desktop-portal app-ID warning because the AppImage is not installed as a registered desktop application.
 
-## Flatpak (experimental, not included in v1.0.0)
+## Flatpak (experimental)
 
 The Flatpak CI build succeeds but has **not** been run and approved on a real KDE Plasma session. Do not distribute it until its integration is validated. It uses `io.github.alsiniz.DirigeraPlasma` with scoped networking and D-Bus permissions and separate sandboxed credentials.
 

@@ -773,9 +773,9 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.explainer)
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs, stretch=1)
-        self.empty = QLabel("Connect to DIRIGERA and choose your lights to begin.")
-        self.empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.tabs.addTab(self.empty, "Start")
+        welcome = QLabel("Connect to DIRIGERA and choose your lights to begin.")
+        welcome.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.tabs.addTab(welcome, "Start")
         self.status = QLabel("No hub configured")
         self.status.setObjectName("status")
         layout.addWidget(self.status)
@@ -797,8 +797,8 @@ class MainWindow(QMainWindow):
         self.tray_signals.show_requested.connect(self.show_and_raise)
         self.tray_signals.menu_requested.connect(self.show_tray_menu)
         self.tray_signals.menu_action.connect(self.on_native_menu_action)
-        self._tray_menu = QMenu(self)
-        self.rebuild_tray_menu()
+        self._tray_menu = self.create_tray_menu()
+        self.update_tray_menu()
         self._create_native_tray()
 
     def _tray_ready(self):
@@ -811,7 +811,7 @@ class MainWindow(QMainWindow):
             self.tray.deleteLater()
             self.tray = None
         self.update_tray_tooltip()
-        self.rebuild_tray_menu()
+        self.update_tray_menu()
 
     def _tray_failed(self, error):
         # Other desktops can still use a normal icon, but scroll may not work
@@ -946,30 +946,39 @@ class MainWindow(QMainWindow):
         elif action in handlers:
             handlers[action]()
 
-    def rebuild_tray_menu(self):
-        # QSystemTrayIcon is retained only as a fallback for non-Plasma trays.
-        # Plasma's native menu comes from the D-Bus model below instead.
-        menu = self._tray_menu
-        menu.clear()
+    def create_tray_menu(self):
+        menu = QMenu(self)
         menu.addAction("Show controls", self.show_and_raise)
-        power = tray_power_targets(self.lights, self.config["approved"], self.config.get("tray_room", ""))
-        menu.addAction("Toggle approved room lights (middle-click)", self.on_tray_middle).setEnabled(bool(power))
+        self._room_power_action = menu.addAction("Toggle approved room lights (middle-click)", self.on_tray_middle)
         menu.addAction("Refresh", self.refresh)
-        rooms = self._approved_rooms()
-        submenu = menu.addMenu("Scroll brightness in…")
-        auto = submenu.addAction("Automatic (one approved room)")
-        auto.setCheckable(True)
-        auto.setChecked(not self.config.get("tray_room"))
-        auto.triggered.connect(lambda checked=False: self.set_tray_room(""))
-        for rid, name in sorted(rooms.items(), key=lambda p: p[1].casefold()):
-            action = submenu.addAction(name)
-            action.setCheckable(True)
-            action.setChecked(self.config.get("tray_room") == rid)
-            action.triggered.connect(lambda checked=False, id_=rid: self.set_tray_room(id_))
+        self._room_menu = menu.addMenu("Scroll brightness in…")
+        self._room_menu.triggered.connect(self.room_action_triggered)
+        self._menu_rooms = None
         menu.addAction("Tray settings / change icon…", self.change_tray_settings)
         menu.addAction(f"About {APP_NAME}…", self.show_about)
         menu.addSeparator()
         menu.addAction(f"Quit {APP_NAME}", self.quit_application)
+        return menu
+
+    def room_action_triggered(self, action):
+        self.set_tray_room(action.data())
+
+    def update_tray_menu(self):
+        selected = self.config.get("tray_room", "")
+        power = tray_power_targets(self.lights, self.config["approved"], selected)
+        self._room_power_action.setEnabled(bool(power))
+        rooms = self._approved_rooms()
+        if rooms != self._menu_rooms:
+            self._room_menu.clear()
+            choices = [("", "Automatic (one approved room)")]
+            choices.extend(sorted(rooms.items(), key=lambda pair: pair[1].casefold()))
+            for room_id, name in choices:
+                action = self._room_menu.addAction(name)
+                action.setData(room_id)
+                action.setCheckable(True)
+            self._menu_rooms = rooms
+        for action in self._room_menu.actions():
+            action.setChecked(action.data() == selected)
         if self.tray_sni:
             self.tray_sni.update(menu_model=self._native_menu_model())
 
@@ -981,7 +990,7 @@ class MainWindow(QMainWindow):
         self.config["tray_room"] = rid
         write_config(self.config)
         self.update_tray_tooltip()
-        self.rebuild_tray_menu()
+        self.update_tray_menu()
 
     def change_tray_settings(self):
         rooms = {}
@@ -989,13 +998,11 @@ class MainWindow(QMainWindow):
             rooms[light.room_id] = light.room_name
         dialog = TraySettingsDialog(self, self.config.get("tray_icon", "weather-clear"),
                                     self.config.get("tray_room", ""), rooms)
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return
-        self.config["tray_icon"] = dialog.icon_name
-        self.set_tray_room(dialog.room.currentData())
-        self.setWindowIcon(self._selected_qicon())
-        self.update_tray_tooltip()
-        self.rebuild_tray_menu()
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.config["tray_icon"] = dialog.icon_name
+            self.set_tray_room(dialog.room.currentData())
+            self.setWindowIcon(self._selected_qicon())
+        dialog.deleteLater()
 
     def show_about(self):
         def installed_version(name):
@@ -1202,7 +1209,7 @@ class MainWindow(QMainWindow):
         self._tray_pending_ids = ()
         self._tray_scroll_accumulator = 0
         self.update_tray_tooltip()
-        self.tabs.clear()
+        self.clear_tab_pages()
         self.tabs.addTab(QLabel("Discovering lights. No devices have been approved yet."), "Start")
         self.start_worker()
 
@@ -1227,7 +1234,7 @@ class MainWindow(QMainWindow):
         self.approvals_btn.setEnabled(True)
         self.refresh_timer.start()
         self.render_tabs()
-        self.rebuild_tray_menu()
+        self.update_tray_menu()
         if self._tray_pending_level is not None and self._tray_pending_ids:
             current = {l.id: l for l in lights}
             if all(i in current and abs(current[i].brightness - self._tray_pending_level) <= 1
@@ -1268,7 +1275,7 @@ class MainWindow(QMainWindow):
         self._tray_scroll_accumulator = 0
         self.render_tabs()
         self.update_tray_tooltip()
-        self.rebuild_tray_menu()
+        self.update_tray_menu()
         self.status.setText(f"Saved: {len(dialog.selection_lights)} controllable light(s), "
                             f"{len(dialog.selection_sensors)} read-only sensor(s).")
 
@@ -1387,10 +1394,18 @@ class MainWindow(QMainWindow):
                 line.addStretch()
                 layout.addLayout(line)
 
+    def clear_tab_pages(self):
+        # Removing a tab leaves its page owned by Qt's internal stacked widget.
+        while self.tabs.count():
+            index = self.tabs.count() - 1
+            page = self.tabs.widget(index)
+            self.tabs.removeTab(index)
+            page.deleteLater()
+
     def render_tabs(self):
         old_index = self.tabs.currentIndex()
         eligible = approved_visible(self.lights, self.config["approved"])
-        self.tabs.clear()
+        self.clear_tab_pages()
         if not eligible:
             label = QLabel("No approved bulbs are currently available.\n\n"
                            "Choose devices to select the exact devices you own.")

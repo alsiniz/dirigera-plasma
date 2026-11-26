@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1] - 2026-11-26
+
+- Fixed memory growth during the 30-second hub refresh. Replaced room and climate pages now release their widgets, including while the window is hidden in the tray.
+- Reused the tray menu and its room submenu across refreshes. The list of room actions updates when the approved rooms change.
+- Released the Tray Settings dialog after both Save and Cancel.
+- Added Qt regression tests for repeated refreshes, room selection, and dialog disposal.
+
 ## [1.0.0] - 2026-11-23
 
 First stable release, distributing the **x86_64 AppImage**. Verified on Bazzite KDE Plasma with fresh in-app DIRIGERA pairing and local lighting controls.
