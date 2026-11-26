@@ -1,4 +1,4 @@
-# DIRIGERA Plasma 1.0.0-dev.7 — GUI pairing acceptance test
+# Lysnav for KDE Plasma 1.0.0-dev.7 — GUI pairing acceptance test
 
 **Development build only. Do not publish it yet.** Dev.5's native Plasma menu
 and tray scrolling were confirmed working. This update should not change either.
@@ -19,7 +19,7 @@ and tray scrolling were confirmed working. This update should not change either.
 4. Cancel pairing midway: the helper must terminate, with no lingering process.
 5. Confirm Hub settings opens large enough to show its DHCP advice and buttons
    without clipping. About must credit **alsiniz** as maintainer with a link to
-   `https://github.com/alsiniz/dirigera-plasma`.
+   `https://github.com/alsiniz`.
 
 1. Fully quit the previous app via native tray menu or **Ctrl+Q**, then install
    dev.6 and launch it. Confirm stored hub access, approved lights, sensors,

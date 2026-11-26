@@ -1,0 +1,50 @@
+{
+  "app-id": "io.github.alsiniz.Lysnav",
+  "runtime": "org.kde.Platform",
+  "runtime-version": "6.10",
+  "sdk": "org.kde.Sdk",
+  "base": "io.qt.PySide.BaseApp",
+  "base-version": "6.10",
+  "command": "lysnav",
+  "build-options": {
+    "env": {
+      "BASEAPP_REMOVE_WEBENGINE": "1",
+      "BASEAPP_DISABLE_NUMPY": "1"
+    }
+  },
+  "cleanup-commands": [
+    "/app/cleanup-BaseApp.sh"
+  ],
+  "finish-args": [
+    "--share=network",
+    "--socket=wayland",
+    "--socket=fallback-x11",
+    "--talk-name=org.kde.StatusNotifierWatcher",
+    "--talk-name=org.freedesktop.StatusNotifierWatcher",
+    "--talk-name=org.kde.plasmashell",
+    "--filesystem=xdg-config/kdeglobals:ro",
+    "--filesystem=xdg-data/icons:ro"
+  ],
+  "modules": [
+    "python3-deps.json",
+    {
+      "name": "lysnav",
+      "buildsystem": "simple",
+      "build-commands": [
+        "install -d /app/bin /app/lib/lysnav /app/share/applications /app/share/icons/hicolor/scalable/apps /app/share/doc/lysnav /app/share/metainfo",
+        "install -m 644 app.py core.py tray_sni.py tray_compat.py tray_menu_model.py icon_theme.py pairing.py version.py /app/lib/lysnav/",
+        "install -m 755 packaging/flatpak/lysnav /app/bin/lysnav",
+        "install -m 644 packaging/flatpak/io.github.alsiniz.Lysnav.desktop /app/share/applications/",
+        "install -m 644 assets/io.github.alsiniz.Lysnav.svg /app/share/icons/hicolor/scalable/apps/",
+        "install -m 644 packaging/flatpak/io.github.alsiniz.Lysnav.metainfo.xml /app/share/metainfo/",
+        "install -m 644 LICENSE THIRD_PARTY_NOTICES.md /app/share/doc/lysnav/"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "../.."
+        }
+      ]
+    }
+  ]
+}

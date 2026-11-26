@@ -1,4 +1,4 @@
-# Publishing DIRIGERA Plasma releases
+# Publishing Lysnav for KDE Plasma releases
 
 ## v1.0.0
 

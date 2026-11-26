@@ -27,9 +27,9 @@ def build_menu(rooms: dict[str, str], selected_room: str, *, power_available: bo
         node(3, 'Refresh', 'refresh'),
         node(4, 'Scroll brightness in…', children=choices),
         node(5, 'Tray settings / change icon…', 'settings'),
-        node(7, 'About DIRIGERA Plasma…', 'about'),
+        node(7, 'About Lysnav for KDE Plasma…', 'about'),
         node(8, separator=True),
-        node(9, 'Quit DIRIGERA Plasma', 'quit'),
+        node(9, 'Quit Lysnav for KDE Plasma', 'quit'),
     ])
 
 

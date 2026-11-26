@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for helping test DIRIGERA Plasma.
+Thank you for helping test Lysnav for KDE Plasma.
 
 1. Search existing issues before opening a new report.
 2. Include your distribution, Plasma version, Qt/PySide6 version, Python version,

@@ -1,3 +1,0 @@
-#!/bin/sh
-export PYTHONPATH="/app/lib/dirigera-plasma${PYTHONPATH:+:$PYTHONPATH}"
-exec python3 /app/lib/dirigera-plasma/app.py "$@"

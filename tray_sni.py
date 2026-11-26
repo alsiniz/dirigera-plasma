@@ -39,11 +39,11 @@ class Item(ServiceInterface):
 
     @dbus_property(access=PropertyAccess.READ)
     def Id(self) -> 's':
-        return 'dirigera-plasma'
+        return 'lysnav'
 
     @dbus_property(access=PropertyAccess.READ)
     def Title(self) -> 's':
-        return 'DIRIGERA Plasma'
+        return 'Lysnav for KDE Plasma'
 
     @dbus_property(access=PropertyAccess.READ)
     def Status(self) -> 's':
@@ -97,7 +97,7 @@ class Item(ServiceInterface):
 
     @dbus_property(access=PropertyAccess.READ)
     def ToolTip(self) -> '(sa(iiay)ss)':
-        return ['', [], 'DIRIGERA Plasma', self.tooltip]
+        return ['', [], 'Lysnav for KDE Plasma', self.tooltip]
 
     @method()
     def Activate(self, x: 'i', y: 'i'):
@@ -261,12 +261,12 @@ class StatusNotifierTray:
         # The usual org.kde.StatusNotifierItem-PID-1 name is rejected by Flatpak
         # (invalid as a sandbox --own-name wildcard), although Plasma accepts it.
         self.service_name = (
-            f"io.github.alsiniz.DirigeraPlasma.Tray{os.getpid()}"
+            f"io.github.alsiniz.Lysnav.Tray{os.getpid()}"
             if os.environ.get("FLATPAK_ID")
             else f"org.kde.StatusNotifierItem-{os.getpid()}-1"
         )
         self.menu_probe = 'not attempted'
-        self.thread = threading.Thread(target=self._thread_main, name='dirigera-plasma-tray', daemon=True)
+        self.thread = threading.Thread(target=self._thread_main, name='lysnav-tray', daemon=True)
 
     def start(self):
         self.thread.start()
@@ -310,7 +310,7 @@ class StatusNotifierTray:
                 # Keep the working SNI Scroll/SecondaryActivate methods alive.
                 # If Plasma cannot import the menu, ContextMenu opens the main UI
                 # and diagnostics retain the exact serialization failure.
-                print('DIRIGERA Plasma: ' + self.menu_probe, file=__import__('sys').stderr)
+                print('Lysnav for KDE Plasma: ' + self.menu_probe, file=__import__('sys').stderr)
             else:
                 self.menu_probe = f'OK, {len(reply.body[1][2])} top-level items'
 

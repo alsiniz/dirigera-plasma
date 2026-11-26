@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 ROOT="$PWD"
 FLATPAK_DIR="$ROOT/packaging/flatpak"
-ID=io.github.alsiniz.DirigeraPlasma
+ID=io.github.alsiniz.Lysnav
 BRANCH=6.10
 command -v flatpak-builder >/dev/null || { echo 'Install flatpak-builder first.' >&2; exit 2; }
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
@@ -23,5 +23,5 @@ python3 -m venv "$TOOLS_DIR/venv"
 test -f "$FLATPAK_DIR/python3-deps.json" || { echo 'Missing pip dependencies manifest' >&2; exit 1; }
 flatpak-builder --user --install-deps-from=flathub --force-clean --repo="$ROOT/flatpak-repo" \
   "$ROOT/flatpak-build" "$FLATPAK_DIR/$ID.json"
-flatpak build-bundle "$ROOT/flatpak-repo" "$ROOT/dirigera-plasma.flatpak" "$ID"
+flatpak build-bundle "$ROOT/flatpak-repo" "$ROOT/lysnav.flatpak" "$ID"
 echo 'Flatpak bundle produced (must be tested under KDE Plasma before release).'

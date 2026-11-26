@@ -4,7 +4,7 @@ DIRIGERA tokens act like passwords for the whole hub: a person who gets your tok
 can control other residents' devices with another program, even though this
 application limits writes to individually approved device IDs and saved room IDs.
 
-- The app stores the token in `~/.config/dirigera-plasma/config.json` (mode 0600).
+- The app stores the token in `~/.config/lysnav/config.json` (mode 0600).
   Treat it as a password. Protect account backups and don't upload this file.
 - Room/group operations are implemented as individual device writes with
   authorization checks; the hub itself does not enforce this allowlist.

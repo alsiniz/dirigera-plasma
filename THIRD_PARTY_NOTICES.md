@@ -1,6 +1,6 @@
 # Third-party components and acknowledgments
 
-DIRIGERA Plasma does **not** bundle the dependencies below in its source archive.
+Lysnav for KDE Plasma does **not** bundle the dependencies below in its source archive.
 The user-local installer downloads them into a virtual environment. Their
 licenses remain their own and are not replaced by this project's MIT license.
 

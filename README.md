@@ -1,4 +1,8 @@
-# DIRIGERA Plasma
+# Lysnav for KDE Plasma
+
+The name **Lysnav** is a Scandinavian-inspired combination of *lys* (light) and *nav* (hub).
+
+Lysnav is an independent third-party application and is not affiliated with, endorsed by, or sponsored by IKEA.
 
 **Your IKEA DIRIGERA smart home hub, seamlessly integrated with KDE Plasma.**
 
@@ -7,19 +11,21 @@ Control your lights from the desktop or system tray, see room temperature and hu
 [![License: MIT](https://img.shields.io/badge/License-MIT-2ea44f.svg)](LICENSE)
 [![Platform: Linux / KDE Plasma](https://img.shields.io/badge/Platform-Linux%20%7C%20KDE%20Plasma-1d99f3.svg)](#requirements)
 
-> **v1.0.1 is available as a Linux x86_64 AppImage.** This patch fixes memory growth during long-running tray sessions. The Flatpak is still undergoing runtime testing and is **not yet a published release asset**.
+> **The pre-rebrand v1.0.1 is available as a Linux x86_64 AppImage.** This patch fixes memory growth during long-running tray sessions. The Flatpak is still undergoing runtime testing and is **not yet a published release asset**.
+
+The screenshots on this page show the pre-rebrand release.
 
 <p align="center">
-  <img src="docs/screenshots/main-window.png" alt="DIRIGERA Plasma's main window showing approved room and individual light controls" width="900">
+  <img src="docs/screenshots/main-window.png" alt="Lysnav for KDE Plasma's main window showing approved room and individual light controls" width="900">
 </p>
 
 <p align="center"><sub>Room-wide and individual light controls, styled by KDE Plasma.</sub></p>
 
-## Why DIRIGERA Plasma?
+## Why Lysnav for KDE Plasma?
 
-Your smart lights shouldn't require unlocking your phone every time you want to dim them. DIRIGERA Plasma brings lighting controls to the desktop you're already using. It communicates **directly with the IKEA DIRIGERA hub on your local network**, leaving the hub to manage its connected lights and sensors.
+Your smart lights shouldn't require unlocking your phone every time you want to dim them. Lysnav for KDE Plasma brings lighting controls to the desktop you're already using. It communicates **directly with the IKEA DIRIGERA hub on your local network**, leaving the hub to manage its connected lights and sensors.
 
-- **Local and private:** No cloud account, login, telemetry, or remote automation server is required by DIRIGERA Plasma. After installation, normal operation works without internet access, provided the PC and hub can communicate over your LAN.
+- **Local and private:** No cloud account, login, telemetry, or remote automation server is required by Lysnav for KDE Plasma. After installation, normal operation works without internet access, provided the PC and hub can communicate over your LAN.
 - **Control without opening a window:** Scroll over the Plasma tray icon to dim or brighten; middle-click to toggle the lights in your selected room. The tray's native right-click menu gives quick access to the app.
 - **GUI-first hub authorization:** Generate the hub access token inside the app. No copying commands or tokens from a terminal during setup.
 - **Built for shared homes:** Approve only the bulbs you want the app to control. Other residents' bulbs remain outside its lighting controls.
@@ -59,7 +65,7 @@ A hover reveals room climate readings. Scroll over the tray icon to change brigh
 
 ### AppImage (recommended for v1.0.1)
 
-Download `DIRIGERA-Plasma-v1.0.1-x86_64.AppImage` from the [latest GitHub release](https://github.com/alsiniz/dirigera-plasma/releases/latest). This portable package needs no root privileges, separate smart-home hub, or Python setup.
+Download `DIRIGERA-Plasma-v1.0.1-x86_64.AppImage` from the [pre-rebrand v1.0.1 release](https://github.com/alsiniz/dirigera-plasma/releases/tag/v1.0.1). This portable package needs no root privileges, separate smart-home hub, or Python setup.
 
 ```bash
 chmod +x DIRIGERA-Plasma-v1.0.1-x86_64.AppImage
@@ -73,20 +79,22 @@ For convenience you may integrate the AppImage into your application launcher us
 ### Source installation (alternative)
 
 ```bash
-git clone https://github.com/alsiniz/dirigera-plasma.git
-cd dirigera-plasma
+git clone https://github.com/alsiniz/dirigera-plasma.git lysnav-plasma
+cd lysnav-plasma
 ./install.sh
 ```
 
+The original clone URL also works after the repository moves to `alsiniz/lysnav-plasma`.
+
 Alternatively, select **Code → Download ZIP** on GitHub, extract it, then run `bash install.sh` from the extracted directory.
 
-The installer creates an isolated Python environment under `~/.local/share/dirigera-plasma/` and adds **DIRIGERA Plasma** to your KDE application launcher. It does not need `sudo`, and it does not start a separate server or system service. Its first run downloads the required Python packages.
+The installer creates an isolated Python environment under `~/.local/share/lysnav/` and adds **Lysnav for KDE Plasma** to your KDE application launcher. The command is `lysnav` in `~/.local/bin`. It does not need `sudo`, and it does not start a separate server or system service. Its first run downloads the required Python packages.
 
 > **Other Linux distributions:** The source installer may work on other Plasma distributions, but these have not yet been validated. If virtual environments are unavailable, install your distribution's Python venv package first.
 
 ### Connect your hub through the GUI
 
-Once installed, launch **DIRIGERA Plasma** from KDE's application launcher:
+Once installed, launch **Lysnav for KDE Plasma** from KDE's application launcher:
 
 1. In **Hub settings**, enter your DIRIGERA hub's local IP address or a supported local hostname. You can usually find its IP in your router's connected-device list.
 2. The **Generate token** button becomes available when the address has a valid format. Click it to open the pairing dialog.
@@ -99,7 +107,7 @@ The app is **authorizing access to your existing hub**, not pairing the light bu
 **Tip:** Reserve a consistent IP address for DIRIGERA in your router's DHCP settings so the hub remains reachable at the saved address. Router instructions vary by manufacturer.
 
 <p align="center">
-  <img src="docs/screenshots/gui-pairing.png" alt="In-app token generation dialog guiding the user through authorizing DIRIGERA Plasma with the physical hub button" width="520">
+  <img src="docs/screenshots/gui-pairing.png" alt="In-app token generation dialog guiding the user through authorizing Lysnav for KDE Plasma with the physical hub button" width="520">
 </p>
 
 > **Verified:** The AppImage's GUI pairing process succeeded from a clean configuration on Bazzite. Flatpak pairing remains untested.
@@ -120,7 +128,7 @@ For finer control, open the window to change individual bulbs or approved bulbs 
 
 ### Match your Plasma theme
 
-Choose an app icon from the icon theme already installed and selected in KDE Plasma. No Breeze icons or separate icon packs are bundled with DIRIGERA Plasma.
+Choose an app icon from the icon theme already installed and selected in KDE Plasma. No Breeze icons or separate icon packs are bundled with Lysnav for KDE Plasma.
 
 <p align="center">
   <img src="docs/screenshots/icon-picker.png" alt="Icon picker browsing icons from the active KDE Plasma icon theme" width="520">
@@ -128,7 +136,7 @@ Choose an app icon from the icon theme already installed and selected in KDE Pla
 
 ## Shared households and privacy
 
-**Only explicitly approved bulbs receive commands from DIRIGERA Plasma.** Device approvals are tied to device IDs, not simply names. Room controls are restricted to approved lights, and if a bulb moves to another room, it must be reviewed and approved again. New devices are not approved automatically.
+**Only explicitly approved bulbs receive commands from Lysnav for KDE Plasma.** Device approvals are tied to device IDs, not simply names. Room controls are restricted to approved lights, and if a bulb moves to another room, it must be reviewed and approved again. New devices are not approved automatically.
 
 <p align="center">
   <img src="docs/screenshots/device-approval.png" alt="Device approval screen showing selective light and read-only sensor permissions in a shared home" width="570">
@@ -136,7 +144,7 @@ Choose an app icon from the icon theme already installed and selected in KDE Pla
 
 **Important:** These restrictions apply to **this app**, not to the hub's access token. That token can potentially control *all* devices on the shared DIRIGERA hub. Someone who obtains it could use other software to control other residents' devices. Keep it private, just as you would a password.
 
-- App settings are stored in `~/.config/dirigera-plasma/config.json`, readable only by your local user account under the standard installation. The access token is stored there; protect backups of this file.
+- App settings are stored in `~/.config/lysnav/config.json`, readable only by your local user account under the standard installation. Lysnav reads pairing, device approvals, and preferences from the previous `dirigera-plasma` configuration on upgrade. The access token is stored there; protect backups of this file.
 - No cloud connection or external account is required for day-to-day control. Opening the optional Ko-fi link uses your browser, by choice.
 - The app uses the **unofficial, undocumented local DIRIGERA API**. IKEA firmware updates could affect compatibility.
 
@@ -144,11 +152,11 @@ Choose an app icon from the icon theme already installed and selected in KDE Pla
 
 | Format | v1.0.1 availability | Status |
 | --- | --- | --- |
-| **AppImage (x86_64)** | [GitHub Releases](https://github.com/alsiniz/dirigera-plasma/releases/latest) | The original v1.0.0 AppImage was tested on Bazzite / KDE Plasma, including clean in-app pairing |
+| **AppImage (x86_64)** | [GitHub Releases](https://github.com/alsiniz/dirigera-plasma/releases/tag/v1.0.1) | The original v1.0.0 AppImage was tested on Bazzite / KDE Plasma, including clean in-app pairing |
 | **Source installer** | This repository | Available; requires a one-time Python dependency download |
 | **Flatpak** | Not published | Builds in GitHub Actions, but actual KDE Plasma runtime behavior and pairing still need validation |
 
-AppImage can run without installation, whereas Flatpak uses application ID `io.github.alsiniz.DirigeraPlasma` and has its own sandboxed configuration. When Flatpak becomes available, it will need separate GUI hub authorization on first launch.
+AppImage can run without installation, whereas Flatpak uses application ID `io.github.alsiniz.Lysnav` and has its own sandboxed configuration. After installing a Lysnav Flatpak, launch it with `flatpak run io.github.alsiniz.Lysnav`. If you used the experimental pre-rebrand Flatpak, pair the hub and approve your devices in the new sandbox on first launch.
 
 ## Troubleshooting
 
@@ -180,8 +188,12 @@ See [CHANGELOG.md](CHANGELOG.md) for release history and ongoing fixes.
 - [dbus-next](https://github.com/altdesktop/python-dbus-next) for Plasma StatusNotifierItem and D-BusMenu integration.
 - [KDE Plasma](https://kde.org/plasma-desktop/) and the active icon theme installed on the user's system.
 
-**Created and maintained by [alsiniz](https://github.com/alsiniz)**, with development assistance from OpenAI ChatGPT. This is an independent community project, **not affiliated with or endorsed by IKEA or KDE**. See [third-party notices](THIRD_PARTY_NOTICES.md).
+**Created and maintained by [alsiniz](https://github.com/alsiniz)**, with development assistance from OpenAI ChatGPT. KDE does not sponsor or endorse this project. See [third-party notices](THIRD_PARTY_NOTICES.md).
 
 **License:** [MIT](LICENSE). Free to use, modify, redistribute, and use commercially under its terms.
 
 If this project makes your desktop a little more convenient, [support its development on Ko-fi](https://ko-fi.com/alsiniz).
+
+## Lysnav editions
+
+Lysnav for Windows (`alsiniz/lysnav-windows`) shares the desktop brand. The planned mobile edition is Lysnav for Android (`alsiniz/lysnav-android`). [View the three icon proposals](docs/branding/README.md).

@@ -50,7 +50,7 @@ class PresentationTests(unittest.TestCase):
         self.assertIn('Scroll over the icon', contents)
         self.assertIn('DHCP reservation', contents)
         self.assertIn('QDesktopServices.openUrl(QUrl(KOFI_URL))', contents)
-        self.assertIn('https://github.com/alsiniz/dirigera-plasma', contents)
+        self.assertIn('https://github.com/alsiniz', contents)
 
 
 if __name__ == '__main__':

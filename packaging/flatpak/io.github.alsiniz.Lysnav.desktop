@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Lysnav for KDE Plasma
+Comment=KDE Plasma controls for selected IKEA DIRIGERA smart lights
+Exec=lysnav
+Icon=io.github.alsiniz.Lysnav
+Terminal=false
+Categories=Utility;
+StartupWMClass=lysnav
+StartupNotify=true

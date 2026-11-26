@@ -376,7 +376,7 @@ class ConnectionDialog(QDialog):
         ip_note = QLabel(
             "<b>Recommended: reserve an IP address for DIRIGERA.</b> "
             "Set a DHCP reservation in your router so the hub keeps the same local IP address. "
-            "This helps DIRIGERA Plasma reconnect reliably. See your router's manual "
+            "This helps Lysnav for KDE Plasma reconnect reliably. See your router's manual "
             "for instructions on configuring DHCP reservations."
         )
         ip_note.setWordWrap(True)
@@ -663,7 +663,7 @@ class TraySettingsDialog(QDialog):
         layout.addLayout(form)
         shortcuts = QGroupBox("Plasma panel shortcuts")
         shortcut_layout = QVBoxLayout(shortcuts)
-        intro = QLabel("Use the DIRIGERA Plasma icon in KDE Plasma's system tray (panel):")
+        intro = QLabel("Use the Lysnav for KDE Plasma icon in KDE Plasma's system tray (panel):")
         intro.setWordWrap(True)
         shortcut_layout.addWidget(intro)
         scroll_tip = QLabel(
@@ -745,7 +745,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
         header = QHBoxLayout()
-        heading = QLabel("DIRIGERA  /  My lights")
+        heading = QLabel("Lysnav  /  My lights")
         heading.setStyleSheet("font-weight: 700; font-size: 19px; padding: 5px 0")
         header.addWidget(heading, stretch=1)
         self.approvals_btn = QPushButton("Choose devices")
@@ -818,7 +818,7 @@ class MainWindow(QMainWindow):
         # in the Qt DBus backend on Plasma.
         self._sni_ready = False
         self._sni_error = str(error)
-        print(f"DIRIGERA native tray failed: {error}", file=sys.stderr)
+        print(f"Lysnav native tray failed: {error}", file=sys.stderr)
         self.tray_sni = None
         if self.tray is None and QSystemTrayIcon.isSystemTrayAvailable():
             self.tray = WheelFallbackTray(self._selected_qicon(), self)
@@ -1024,10 +1024,11 @@ class MainWindow(QMainWindow):
         text.setOpenExternalLinks(True)
         text.setHtml(f"""
             <p>A lightweight, local controller for IKEA DIRIGERA on KDE Plasma.</p>
+            <p>Lysnav is an independent third-party application and is not affiliated with, endorsed by, or sponsored by IKEA.</p>
             <p><b>Features:</b> approved-only lighting controls, live colour selection,
             Kelvin and brightness sliders, read-only climate sensors, and Plasma
             system tray integration via StatusNotifierItem and D-BusMenu.</p>
-            <p><b>Development:</b> <a href='https://github.com/alsiniz/dirigera-plasma'>alsiniz</a> (project creator and maintainer), with implementation and troubleshooting assistance from <a href='https://openai.com/'>OpenAI ChatGPT</a>.</p>
+            <p><b>Development:</b> <a href='https://github.com/alsiniz'>alsiniz</a> (project creator and maintainer), with implementation and troubleshooting assistance from <a href='https://openai.com/'>OpenAI ChatGPT</a>.</p>
             <p><b>Open-source components:</b></p>
             <ul>
             <li><a href='https://github.com/Leggin/dirigera'>dirigera</a>
@@ -1042,13 +1043,11 @@ class MainWindow(QMainWindow):
             <li><a href='https://develop.kde.org/'>KDE Plasma</a>,
                 StatusNotifierItem, D-BusMenu, and KDE icon themes.</li>
             </ul>
-            <p>DIRIGERA Plasma source is shared under the <b>MIT License</b>.
+            <p>Lysnav for KDE Plasma source is shared under the <b>MIT License</b>.
             Free to use, modify, share, and sell, with
             preservation of the copyright and license notice. See the LICENSE file for exact terms.
-            Upstream components keep their own licenses.</p><p>
-            It is an independent community project, not affiliated with or
-            endorsed by IKEA, KDE, or the upstream library maintainers.</p>
-            <p><b>Keep your hub access token private.</b> DIRIGERA Plasma only sends
+            Upstream components keep their own licenses. KDE and the upstream library maintainers do not endorse this project.</p>
+            <p><b>Keep your hub access token private.</b> Lysnav for KDE Plasma only sends
             lighting commands to the bulbs you explicitly approve. This helps
             prevent accidentally changing other residents’ lights.</p>
             <p>However, the IKEA hub does not limit the access token to those
@@ -1510,12 +1509,8 @@ class MainWindow(QMainWindow):
 def main():
     app = QApplication(sys.argv)
     # Use the desktop entry's ID for consistent KDE Plasma panel window previews.
-    desktop_id = os.environ.get("FLATPAK_ID") or (
-        "io.github.alsiniz.DirigeraPlasma"
-        if os.environ.get("APPIMAGE") else "dirigera-plasma"
-    )
-    app.setDesktopFileName(desktop_id)
-    app.setApplicationName("dirigera-plasma")
+    app.setDesktopFileName("io.github.alsiniz.Lysnav")
+    app.setApplicationName("lysnav")
     app.setApplicationDisplayName(APP_NAME)
     app.setQuitOnLastWindowClosed(False)
     window = MainWindow()

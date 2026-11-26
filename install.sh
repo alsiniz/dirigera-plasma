@@ -5,30 +5,30 @@ umask 077
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
 CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
-APP="$DATA/dirigera-plasma"
+BIN="${XDG_BIN_HOME:-$HOME/.local/bin}"
+APP="$DATA/lysnav"
 LAUNCHERS="$DATA/applications"
-OLD_CONFIG="$CONFIG/dirigera-desktop/config.json"
-NEW_CONFIG="$CONFIG/dirigera-plasma/config.json"
-OLD_LAUNCHER="$LAUNCHERS/dirigera-desktop.desktop"
+ID=io.github.alsiniz.Lysnav
+ICON_DIR="$DATA/icons/hicolor/scalable/apps"
 
-mkdir -p "$APP" "$LAUNCHERS" "$CONFIG/dirigera-plasma"
-chmod 700 "$CONFIG/dirigera-plasma"
+mkdir -p "$APP" "$LAUNCHERS" "$CONFIG/lysnav" "$BIN" "$ICON_DIR"
+chmod 700 "$CONFIG/lysnav"
 
-# Preserve credentials, approvals, icon and selected room. Do not delete or
-# overwrite the v0.6 configuration (rollback may still be needed).
-if [[ ! -e "$NEW_CONFIG" && -f "$OLD_CONFIG" ]]; then
-  install -m 600 "$OLD_CONFIG" "$NEW_CONFIG"
-  echo 'Migrated existing v0.6 settings and device approvals (old settings kept for rollback).'
-fi
+# Prefer settings from the most recent installation. Keep the original for rollback.
+for previous in dirigera-plasma dirigera-desktop; do
+  if [[ ! -e "$CONFIG/lysnav/config.json" && -f "$CONFIG/$previous/config.json" ]]; then
+    install -m 600 "$CONFIG/$previous/config.json" "$CONFIG/lysnav/config.json"
+    break
+  fi
+done
 
 for file in app.py core.py tray_sni.py tray_compat.py tray_menu_model.py icon_theme.py pairing.py version.py; do
   install -m 600 "$SRC/$file" "$APP/$file"
 done
-
-# Include licensing and third-party credits alongside the installed app.
 for file in LICENSE THIRD_PARTY_NOTICES.md README.md; do
   install -m 644 "$SRC/$file" "$APP/$file"
 done
+install -m 644 "$SRC/assets/$ID.svg" "$ICON_DIR/$ID.svg"
 
 if [[ ! -f "$APP/venv/bin/python" ]]; then
   python3 -m venv "$APP/venv"
@@ -36,36 +36,44 @@ fi
 if ! "$APP/venv/bin/python" -c 'import dirigera, PySide6, dbus_next' >/dev/null 2>&1; then
   "$APP/venv/bin/python" -m pip install -r "$SRC/requirements.txt"
 fi
-# Python 3.15 dbus-next compatibility: test the actual module import.
 PYTHONPATH="$APP${PYTHONPATH:+:$PYTHONPATH}" "$APP/venv/bin/python" \
   -c 'from tray_sni import StatusNotifierTray, NativeMenu'
 
-cat > "$APP/run.sh" <<'RUN'
+cat > "$APP/lysnav" <<'RUN'
 #!/usr/bin/env bash
 set -euo pipefail
-HERE="$(cd "$(dirname "$0")" && pwd)"
+HERE="$(dirname "$(readlink -f -- "$0")")"
 exec "$HERE/venv/bin/python" "$HERE/app.py" "$@"
 RUN
-chmod 755 "$APP/run.sh"
+chmod 755 "$APP/lysnav"
 
-cat > "$LAUNCHERS/dirigera-plasma.desktop" <<EOF
-[Desktop Entry]
-Type=Application
-Name=DIRIGERA Plasma
-Comment=KDE Plasma controls for explicitly approved IKEA DIRIGERA lights
-Exec=$APP/run.sh
-Icon=weather-clear
-Terminal=false
-Categories=Utility;Settings;
-StartupWMClass=dirigera-plasma
-StartupNotify=true
-EOF
-chmod 644 "$LAUNCHERS/dirigera-plasma.desktop"
-
-# Hide only our own legacy launcher. Leave v0.6 code intact for rollback.
-if [[ -f "$OLD_LAUNCHER" ]] && grep -q '^Name=DIRIGERA Desktop$' "$OLD_LAUNCHER"; then
-  mv -f "$OLD_LAUNCHER" "$OLD_LAUNCHER.previous"
+# Preserve an unrelated command if the user already has one by this name.
+if [[ ! -e "$BIN/lysnav" && ! -L "$BIN/lysnav" ]]; then
+  ln -s -- "$APP/lysnav" "$BIN/lysnav"
+elif [[ "$(readlink -f -- "$BIN/lysnav")" != "$APP/lysnav" ]]; then
+  printf 'Existing %s kept. Use the application launcher or %s instead.\n' "$BIN/lysnav" "$APP/lysnav"
 fi
 
-printf '\nInstalled DIRIGERA Plasma. Launch from KDE, or run:\n  %s/run.sh\n' "$APP"
-printf 'Your hub token remains private to your account. Never post it in a GitHub issue.\n'
+# The desktop may have a different PATH from the login shell.
+python3 - "$SRC/packaging/flatpak/$ID.desktop" "$APP/lysnav" "$LAUNCHERS/$ID.desktop" <<'PY'
+from pathlib import Path
+import sys
+
+template, executable, target = sys.argv[1:]
+# Quote the executable as a Desktop Entry Exec argument, then escape its field value.
+for char in ('\\', '"', '`', '$'):
+    executable = executable.replace(char, '\\' + char)
+executable = executable.replace('\\', '\\\\').replace('%', '%%')
+entry = Path(template).read_text(encoding='utf-8').replace('Exec=lysnav', f'Exec="{executable}"')
+Path(target).write_text(entry, encoding='utf-8')
+PY
+chmod 644 "$LAUNCHERS/$ID.desktop"
+
+for previous in dirigera-plasma dirigera-desktop; do
+  launcher="$LAUNCHERS/$previous.desktop"
+  if [[ -f "$launcher" ]] && grep -Eq '^Name=DIRIGERA (Desktop|Plasma)$' "$launcher"; then
+    mv -n -- "$launcher" "$launcher.previous"
+  fi
+done
+
+printf '\nInstalled Lysnav for KDE Plasma. Launch from KDE or run:\n  %s/lysnav\n' "$APP"

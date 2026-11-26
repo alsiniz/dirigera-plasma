@@ -1,4 +1,4 @@
-"""DIRIGERA Plasma: hub adapter and deny-by-default command authorization."""
+"""Lysnav for KDE Plasma: hub adapter and deny-by-default command authorization."""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
@@ -178,11 +178,14 @@ def apply(hub: Any, approved: dict[str, str], target_ids: list[str], action: str
 
 def config_path() -> Path:
     root = Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config")))
-    return root / "dirigera-plasma" / "config.json"
+    return root / "lysnav" / "config.json"
 
 
 def read_config() -> dict:
     path = config_path()
+    if not path.exists():
+        # Read the previous installation until Lysnav saves its first settings.
+        path = path.parent.parent / "dirigera-plasma" / path.name
     if not path.exists():
         return {"ip": "", "token": "", "approved": {}, "approved_sensors": {},
                 "tray_icon": "weather-clear", "tray_room": ""}

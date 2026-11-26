@@ -1,9 +1,9 @@
-# DIRIGERA Plasma v1.0.1
+# Lysnav for KDE Plasma
 
-This patch fixes memory growth in long-running tray sessions. Each successful refresh in v1.0.0 retained old room and climate controls and an extra tray submenu. The app now releases replaced controls, reuses its tray menu, and frees Tray Settings after Save or Cancel.
+## Unreleased
 
-## Updating from v1.0.0
+The app now appears as **Lysnav for KDE Plasma** in the launcher, window, About dialog, and tray menu. Run the source installation with the command `lysnav`. Quit the previous version before starting Lysnav. It reads your existing hub pairing, approved devices, and tray preferences.
 
-1. Choose **Quit DIRIGERA Plasma** from the tray menu to stop the old process.
-2. Download `DIRIGERA-Plasma-v1.0.1-x86_64.AppImage` and `SHA256SUMS.txt` from this release. Run `sha256sum -c SHA256SUMS.txt` in the download directory.
-3. Run `chmod +x DIRIGERA-Plasma-v1.0.1-x86_64.AppImage` and launch the new file. It uses your existing hub pairing and device approvals. If a launcher points to the old filename, update it to the new one.
+The Flatpak application ID is `io.github.alsiniz.Lysnav`. Users of the experimental earlier Flatpak should pair and approve their devices in the new sandbox.
+
+The published [v1.0.1 AppImage and checksum](https://github.com/alsiniz/dirigera-plasma/releases/tag/v1.0.1) retain their original filenames. The [changelog](CHANGELOG.md) records the tray memory fix included in that release.

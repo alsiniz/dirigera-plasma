@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Renamed the app to Lysnav for KDE Plasma. The README and About view now identify Lysnav as an independent third-party app.
+- Renamed the executable to `lysnav` and the Flatpak and desktop ID to `io.github.alsiniz.Lysnav`. Native installs read existing pairing and device approvals on upgrade. The new Flatpak ID has its own sandbox.
+- Future AppImage downloads use the `Lysnav-Plasma-` prefix. Published releases retain their original filenames and checksums.
+
 ## [1.0.1] - 2026-11-26
 
 - Fixed memory growth during the 30-second hub refresh. Replaced room and climate pages now release their widgets, including while the window is hidden in the tray.
