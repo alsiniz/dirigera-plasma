@@ -196,4 +196,4 @@ If this project makes your desktop a little more convenient, [support its develo
 
 ## Lysnav editions
 
-Lysnav for Windows (`alsiniz/lysnav-windows`) shares the desktop brand. The planned mobile edition is Lysnav for Android (`alsiniz/lysnav-android`). [View the three icon proposals](docs/branding/README.md).
+Lysnav for Windows (`alsiniz/lysnav-windows`) shares the desktop brand. The planned mobile edition is Lysnav for Android (`alsiniz/lysnav-android`). [View the icon proposals](docs/branding/README.md).
