@@ -128,12 +128,13 @@ class PanelIconTests(unittest.TestCase):
             window.setPalette(palette)
 
         def centre():
-            return window.windowIcon().pixmap(32, 32).toImage().pixelColor(16, 16).name()
+            return window._selected_qicon().pixmap(32, 32).toImage().pixelColor(16, 16).name()
 
         set_background('#ffffff')
-        self.assertEqual(centre(), '#202020')
+        self.assertEqual(centre(), '#282828')
+        self.assertEqual(window.windowIcon().pixmap(64, 64).toImage().pixelColor(32, 20).name(), '#fe8019')
         set_background('#121212')
-        self.assertEqual(centre(), '#f5f5f5')
+        self.assertEqual(centre(), '#ebdbb2')
 
         with TemporaryDirectory() as folder:
             path = Path(folder) / 'custom.svg'
@@ -146,7 +147,7 @@ class PanelIconTests(unittest.TestCase):
             window.config['tray_icon'] = picker.chosen
             set_background('#ffffff')
             self.assertEqual(centre(), '#176a95')
-            name, pixmaps = window._notifier_icon(window.windowIcon())
+            name, pixmaps = window._notifier_icon(window._selected_qicon())
             self.assertEqual(name, '')
             self.assertEqual(pixmaps[0], [16, 16, bytes.fromhex('ff176a95') * 256])
 
@@ -154,16 +155,16 @@ class PanelIconTests(unittest.TestCase):
             with patch.object(QIcon, 'fromTheme', return_value=QIcon(str(path))):
                 set_background('#121212')
                 self.assertEqual(centre(), '#176a95')
-                self.assertEqual(window._notifier_icon(window.windowIcon())[0], 'my-installed-icon')
+                self.assertEqual(window._notifier_icon(window._selected_qicon())[0], 'my-installed-icon')
 
             picker.choose_default()
             window.config['tray_icon'] = picker.chosen
             window._apply_panel_icon()
-            self.assertEqual(centre(), '#f5f5f5')
+            self.assertEqual(centre(), '#ebdbb2')
             with patch.object(QIcon, 'hasThemeIcon', return_value=True):
-                self.assertEqual(window._notifier_icon(window.windowIcon())[0], 'io.github.alsiniz.Lysnav-symbolic')
+                self.assertEqual(window._notifier_icon(window._selected_qicon())[0], '')
             with patch.object(QIcon, 'hasThemeIcon', return_value=False), patch.dict(os.environ, FLATPAK_ID=''):
-                name, pixmaps = window._notifier_icon(window.windowIcon())
+                name, pixmaps = window._notifier_icon(window._selected_qicon())
                 self.assertEqual(name, '')
                 self.assertTrue(pixmaps)
 
@@ -188,6 +189,35 @@ class RefreshLifetimeTests(unittest.TestCase):
 
     def flush_deletions(self):
         QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+    def test_tray_status_is_global_approved_and_does_not_replace_app_logo(self):
+        window = self.window
+        window.config["tray_room"] = "other"
+        unapproved = replace(self.light, id="unapproved")
+        moved = replace(self.light, room_id="moved")
+        off = replace(self.light, on=False)
+        with patch('app.panel_is_dark', return_value=True):
+            def shade():
+                return window._selected_qicon().pixmap(64, 64).toImage().pixelColor(32, 25).name()
+            def app_shade():
+                return window.windowIcon().pixmap(64, 64).toImage().pixelColor(32, 20).name()
+
+            window.on_loaded(([off, unapproved, moved], [], ""))
+            self.assertEqual(shade(), "#ebdbb2")
+            self.assertEqual(app_shade(), "#fe8019")
+            window.on_loaded(([self.light, unapproved], [], ""))
+            self.assertEqual(shade(), "#fe8019")
+            window.on_failed("offline")
+            self.assertEqual(shade(), "#fe8019")
+            self.assertIn("last known", window._tray_tooltip())
+            window.on_loaded(([off, unapproved], [], ""))
+            self.assertEqual(shade(), "#ebdbb2")
+            self.assertNotIn("last known", window._tray_tooltip())
+            window.on_loaded(([self.light], [], ""))
+            window.config["approved"] = {}
+            window.update_tray_tooltip()
+            self.assertEqual(shade(), "#ebdbb2")
+            self.assertEqual(app_shade(), "#fe8019")
 
     def test_repeated_refresh_disposes_old_pages_and_reuses_menu(self):
         window = self.window

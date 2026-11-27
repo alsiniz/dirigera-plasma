@@ -29,6 +29,42 @@ from core import (apply, approved_climate, approved_visible, environment_snapsho
                   tray_room, tray_targets, write_config)
 
 
+def panel_is_dark(palette):
+    """Use an explicit Plasma theme's window colours when available.
+
+    The default Plasma theme inherits the system palette. Sandboxed or
+    non-KDE sessions may not expose the panel theme, so fall back to Qt.
+    """
+    from configparser import ConfigParser, Error
+    fallback = palette.window().color().lightness() < 128
+    config_dir = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
+    settings = ConfigParser(interpolation=None, strict=False)
+    try:
+        settings.read(config_dir / "plasmarc", encoding="utf-8")
+        name = settings.get("Theme", "name", fallback="default")
+        if name in ("", "default") or Path(name).name != name:
+            return fallback
+        roots = [Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share")]
+        roots += [Path(p) for p in (os.environ.get("XDG_DATA_DIRS") or
+                                    "/usr/local/share:/usr/share").split(":") if p]
+        for root in roots:
+            path = root / "plasma/desktoptheme" / name / "colors"
+            if not path.is_file():
+                continue
+            colours = ConfigParser(interpolation=None, strict=False)
+            colours.read(path, encoding="utf-8")
+            value = colours.get("Colors:Window", "BackgroundNormal", fallback="")
+            rgb = [int(part) for part in value.split(",")]
+            if len(rgb) == 3 and all(0 <= part <= 255 for part in rgb):
+                return QColor(*rgb).lightness() < 128
+            break
+        if name in ("breeze-dark", "breeze-light"):
+            return name == "breeze-dark"
+    except (OSError, ValueError, Error):
+        pass
+    return fallback
+
+
 class HubWorker(QThread):
     loaded = Signal(object)
     completed = Signal(str)
@@ -531,7 +567,7 @@ class IconPickerDialog(QDialog):
 
     def __init__(self, parent, initial):
         super().__init__(parent)
-        self.setWindowTitle("Choose app icon")
+        self.setWindowTitle("Choose tray icon")
         self.resize(700, 530)
         outer = QVBoxLayout(self)
         self.search = QLineEdit()
@@ -677,7 +713,7 @@ class TraySettingsDialog(QDialog):
         browse = QPushButton("Browse system icons…")
         browse.clicked.connect(self.pick_icon)
         icon_row.addWidget(browse)
-        form.addRow("App icon", icon_row)
+        form.addRow("Tray icon", icon_row)
         layout.addLayout(form)
         shortcuts = QGroupBox("Plasma panel shortcuts")
         shortcut_layout = QVBoxLayout(shortcuts)
@@ -728,6 +764,9 @@ class MainWindow(QMainWindow):
         self.config = read_config()
         self.lights = []
         self.sensors = []
+        self._tray_state_stale = True
+        self._panel_icon_cache = {}
+        self.setWindowIcon(QIcon(str(Path(__file__).parent / "assets" / "lysnav-logo.svg")))
         self.sensor_warning = ""
         self.worker = None
         self.color_dialog = None
@@ -750,6 +789,8 @@ class MainWindow(QMainWindow):
         self._slider_wheel_timer.timeout.connect(self.flush_slider_wheel)
         self.tray_sni = None
         self.tray = None
+        self._panel_icon_key = None
+        self._panel_pixmap_cache = {}
         self._sni_ready = False
         self._sni_error = "Starting native tray…"
         self._sni_service = ""
@@ -861,7 +902,7 @@ class MainWindow(QMainWindow):
     def _create_native_tray(self):
         try:
             from tray_sni import StatusNotifierTray
-            name, pixmaps = self._notifier_icon(self.windowIcon())
+            name, pixmaps = self._notifier_icon(self._selected_qicon())
             self.tray_sni = StatusNotifierTray(
                 self.tray_signals, name, self._tray_tooltip(), self._native_menu_model(), pixmaps)
             self._sni_service = self.tray_sni.service_name
@@ -875,6 +916,11 @@ class MainWindow(QMainWindow):
         elif reason == QSystemTrayIcon.ActivationReason.MiddleClick:
             self.on_tray_middle()
 
+    def _default_panel_filename(self):
+        mode = 'dark' if panel_is_dark(self.palette()) else 'light'
+        active = any(l.on for l in approved_visible(self.lights, self.config['approved']))
+        return f"tray-{mode}{'-on' if active else ''}.svg"
+
     def _selected_qicon(self):
         choice = self.config.get("tray_icon", "")
         if choice:
@@ -887,21 +933,22 @@ class MainWindow(QMainWindow):
                     custom = QIcon(files.get(choice, ""))
             if not custom.pixmap(24, 24).isNull():
                 return custom
-        dark = self.palette().window().color().lightness() < 128
-        filename = "tray-dark.svg" if dark else "tray-light.svg"
-        return QIcon(str(Path(__file__).parent / "assets" / filename))
+        filename = self._default_panel_filename()
+        if filename not in self._panel_icon_cache:
+            self._panel_icon_cache[filename] = QIcon(str(Path(__file__).parent / "assets" / filename))
+        return self._panel_icon_cache[filename]
 
     def _notifier_icon(self, icon):
-        choice = self.config.get("tray_icon", "")
-        name = choice
-        if not choice:
-            symbolic = "io.github.alsiniz.Lysnav-symbolic"
-            # Installed desktops can recolour the named icon for the panel itself.
-            # Portable runs without that theme entry publish only their pixmaps.
-            if os.environ.get("FLATPAK_ID") or QIcon.hasThemeIcon(symbolic):
-                name = symbolic
+        # A named symbolic icon lets Plasma replace our exact colours.
+        # Send the branded default as pixels, regardless of installation type.
+        default = any(icon.cacheKey() == cached.cacheKey()
+                      for cached in self._panel_icon_cache.values())
+        name = "" if default else self.config.get("tray_icon", "")
         if Path(name).is_absolute():
-            name = ""  # The panel may run outside the sandbox. Send the image itself.
+            name = ""
+        key = icon.cacheKey()
+        if default and key in self._panel_pixmap_cache:
+            return name, self._panel_pixmap_cache[key]
         pixmaps = []
         for size in (16, 22, 32, 48, 64):
             image = icon.pixmap(QSize(size, size), 1.0).toImage().convertToFormat(QImage.Format.Format_ARGB32)
@@ -911,11 +958,16 @@ class MainWindow(QMainWindow):
                 if sys.byteorder == "little":
                     argb.byteswap()  # StatusNotifierItem specifies network-order ARGB32.
                 pixmaps.append([image.width(), image.height(), argb.tobytes()])
+        if default:
+            self._panel_pixmap_cache[key] = pixmaps
         return name, pixmaps
 
-    def _apply_panel_icon(self):
+    def _apply_panel_icon(self, force=False):
+        key = (self.config.get("tray_icon", ""), self._default_panel_filename())
+        if not force and key == self._panel_icon_key:
+            return
+        self._panel_icon_key = key
         icon = self._selected_qicon()
-        self.setWindowIcon(icon)
         if self.tray:
             self.tray.setIcon(icon)
         if self.tray_sni:
@@ -924,8 +976,8 @@ class MainWindow(QMainWindow):
 
     def changeEvent(self, event):
         super().changeEvent(event)
-        if event.type() == QEvent.Type.PaletteChange and hasattr(self, "tray_sni"):
-            self._apply_panel_icon()
+        if event.type() == QEvent.Type.PaletteChange and hasattr(self, "_panel_icon_key"):
+            self._apply_panel_icon(force=True)
 
     def _current_tray_room(self):
         return tray_room(self.lights, self.config["approved"], self.config.get("tray_room", ""))
@@ -953,9 +1005,11 @@ class MainWindow(QMainWindow):
             scrolling = "Scroll ±5% · middle-click toggle · approved lights only"
         else:
             scrolling = "Scroll unavailable · approve/on lights or select room"
-        return f"{name}\n{climate}\n{scrolling}"
+        warning = "\nLight status unverified / last known" if self._tray_state_stale else ""
+        return f"{name}\n{climate}\n{scrolling}{warning}"
 
     def update_tray_tooltip(self):
+        self._apply_panel_icon()
         tip = self._tray_tooltip()
         if self.tray_sni:
             self.tray_sni.update(tooltip=tip)
@@ -1075,7 +1129,7 @@ class MainWindow(QMainWindow):
         from PySide6.QtWidgets import QTextBrowser
         dialog = QDialog(self)
         dialog.setWindowTitle(f'About {APP_NAME}')
-        dialog.setWindowIcon(self._selected_qicon())
+        dialog.setWindowIcon(self.windowIcon())
         dialog.resize(560, 490)
         layout = QVBoxLayout(dialog)
         heading = QLabel(f'{APP_NAME}  ·  {VERSION}')
@@ -1271,6 +1325,7 @@ class MainWindow(QMainWindow):
         write_config(self.config)
         self.lights = []
         self.sensors = []
+        self._tray_state_stale = True
         self._tray_pending_level = None
         self._tray_pending_ids = ()
         self._tray_scroll_accumulator = 0
@@ -1297,6 +1352,7 @@ class MainWindow(QMainWindow):
         lights, sensors, self.sensor_warning = result
         self.lights = lights
         self.sensors = sensors
+        self._tray_state_stale = False
         self.approvals_btn.setEnabled(True)
         self.refresh_timer.start()
         self.render_tabs()
@@ -1319,6 +1375,9 @@ class MainWindow(QMainWindow):
         self.status.setText(message)
 
     def on_failed(self, error):
+        # A failed request is not evidence that the lights are off.
+        self._tray_state_stale = True
+        self.update_tray_tooltip()
         self.status.setText(f"Request failed: {error}")
 
     def choose_devices(self):
@@ -1577,6 +1636,7 @@ def main():
     app = QApplication(sys.argv)
     # Use the desktop entry's ID for consistent KDE Plasma panel window previews.
     app.setDesktopFileName("io.github.alsiniz.Lysnav")
+    app.setWindowIcon(QIcon(str(Path(__file__).parent / "assets" / "lysnav-logo.svg")))
     app.setApplicationName("lysnav")
     app.setApplicationDisplayName(APP_NAME)
     app.setQuitOnLastWindowClosed(False)
