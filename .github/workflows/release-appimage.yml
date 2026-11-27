@@ -8,6 +8,11 @@ on:
       - packaging/appimage/**
       - RELEASE_NOTES.md
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the AppImage and checksum to GitHub Releases
+        type: boolean
+        default: true
 permissions:
   contents: write
 concurrency:
@@ -66,6 +71,7 @@ jobs:
             SHA256SUMS.txt
           if-no-files-found: error
       - name: Publish GitHub release
+        if: github.event_name != 'workflow_dispatch' || inputs.publish
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
