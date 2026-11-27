@@ -46,6 +46,14 @@ and tray scrolling were confirmed working. This update should not change either.
 
 ## Live tray icon and application branding acceptance test
 
+- Open Tray settings in both desktop colour modes. Check that room, tray
+  appearance and mouse controls are visually separated, text wraps cleanly,
+  and all buttons remain visible at the minimum window size and larger fonts.
+- Choose a system or local custom icon; check its preview, disabled dynamic
+  status message and the enabled Restore default dynamic icon button. Cancel
+  must leave the running tray and config unchanged. Repeat and Save; then
+  restore the default, Save, and check the live shade returns. Input diagnostics
+  must remain accessible without dismissing the settings.
 - In both desktop colour modes, turn the last approved light off and then
   turn an approved light on in a different room. The transparent tray shade
   should be orange only while at least one approved light is on.

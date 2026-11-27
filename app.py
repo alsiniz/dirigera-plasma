@@ -17,9 +17,9 @@ from tray_menu_model import build_menu
 from pairing import valid_hub_address, extract_generated_token, run_token_helper
 
 from PySide6.QtCore import Qt, QObject, QThread, Signal, QTimer, QPointF, QSize, QEvent, QUrl, QProcess, QProcessEnvironment
-from PySide6.QtGui import QColor, QPainter, QPen, QImage, QIcon, QCursor, QKeySequence, QShortcut, QDesktopServices
+from PySide6.QtGui import QColor, QPainter, QPen, QImage, QPixmap, QIcon, QCursor, QKeySequence, QShortcut, QDesktopServices
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QFileDialog,
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout, QFileDialog,
     QLabel, QPushButton, QLineEdit, QDialog, QDialogButtonBox, QTreeWidget,
     QTreeWidgetItem, QMessageBox, QTabWidget, QScrollArea, QGroupBox, QSlider,
     QSystemTrayIcon, QMenu, QFrame, QSizePolicy, QComboBox, QListWidget, QListWidgetItem, QToolTip, QStyleOptionSlider, QStyle,
@@ -683,76 +683,217 @@ class ClickToJumpSlider(QSlider):
         super().mousePressEvent(event)
 
 
+def custom_tray_qicon(choice):
+    """Resolve a custom icon identically for the picker preview and actual tray."""
+    if not choice:
+        return QIcon()
+    if Path(choice).is_absolute():
+        return QIcon(choice)
+    icon = QIcon.fromTheme(choice)
+    if icon.isNull():
+        _, files = discover_system_icons()
+        icon = QIcon(files.get(choice, ""))
+    return icon
+
+
+def mouse_control_pixmap(palette, middle_click=False):
+    """Small gesture illustrations using the current Qt palette."""
+    pixmap = QPixmap(30, 34)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    ink = palette.windowText().color()
+    painter.setPen(QPen(ink, 1.5))
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.drawRoundedRect(5, 2, 20, 30, 9, 9)
+    painter.drawLine(15, 2, 15, 6)
+    painter.setBrush(palette.highlight().color() if middle_click else ink)
+    painter.drawRoundedRect(12, 6, 6, 10, 3, 3)
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    if not middle_click:
+        painter.drawLine(15, 20, 12, 23)
+        painter.drawLine(15, 20, 18, 23)
+        painter.drawLine(15, 27, 12, 24)
+        painter.drawLine(15, 27, 18, 24)
+    painter.end()
+    return pixmap
+
+
 class TraySettingsDialog(QDialog):
-    def __init__(self, parent, icon_name, room_id, rooms):
+    def __init__(self, parent, icon_name, room_id, rooms, default_icon=None):
         super().__init__(parent)
         self.setWindowTitle("System tray settings")
-        # KDE can otherwise create this dialog at a height that clips the
-        # multi-line instructions between the icon picker and the buttons.
-        # Give it a comfortable initial size and a real minimum size; unlike a
-        # fixed size, both dimensions remain user-resizable.
-        self.setMinimumSize(600, 340)
-        self.resize(730, 380)
+        self.setMinimumWidth(600)
+        self.resize(730, 500)
+        self.icon_name = icon_name
+        self._default_icon = default_icon
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(12)
-        form = QFormLayout()
-        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+
+        def heading(text):
+            label = QLabel(text)
+            font = label.font()
+            font.setBold(True)
+            if font.pointSize() > 0:
+                font.setPointSize(font.pointSize() + 1)
+            label.setFont(font)
+            return label
+
+        def description(text):
+            label = QLabel(text)
+            label.setWordWrap(True)
+            return label
+
+        def separator():
+            line = QFrame()
+            line.setFrameShape(QFrame.Shape.HLine)
+            line.setFrameShadow(QFrame.Shadow.Sunken)
+            return line
+
+        layout.addWidget(heading("Tray control room"))
         self.room = QComboBox()
         self.room.addItem("Automatic (only if one approved room)", "")
         for rid, name in sorted(rooms.items(), key=lambda p: p[1].casefold()):
             self.room.addItem(name, rid)
         idx = self.room.findData(room_id)
         self.room.setCurrentIndex(max(0, idx))
-        form.addRow("Tray control room", self.room)
+        layout.addWidget(self.room)
+        layout.addWidget(description("Choose which room responds to tray brightness and power controls."))
+        layout.addWidget(separator())
+
+        layout.addWidget(heading("Tray appearance"))
+        appearance = QFrame()
+        appearance.setFrameShape(QFrame.Shape.StyledPanel)
+        appearance_layout = QVBoxLayout(appearance)
+        appearance_layout.setContentsMargins(12, 12, 12, 12)
+        appearance_layout.setSpacing(10)
+
         icon_row = QHBoxLayout()
-        self.icon_name = icon_name
-        self.icon_label = QLabel(Path(icon_name).name or "Table Lamp (automatic)")
-        self.icon_label.setMinimumWidth(200)
-        icon_row.addWidget(self.icon_label, stretch=1)
-        browse = QPushButton("Browse system icons…")
-        browse.clicked.connect(self.pick_icon)
-        icon_row.addWidget(browse)
-        form.addRow("Tray icon", icon_row)
-        layout.addLayout(form)
-        shortcuts = QGroupBox("Plasma panel shortcuts")
-        shortcut_layout = QVBoxLayout(shortcuts)
-        intro = QLabel("Use the Lysnav for KDE Plasma icon in KDE Plasma's system tray (panel):")
-        intro.setWordWrap(True)
-        shortcut_layout.addWidget(intro)
-        scroll_tip = QLabel(
-            "<b>Scroll over the icon:</b> Brighten or dim the approved lights "
-            "that are already on, by 5% per wheel notch."
+        icon_row.setSpacing(12)
+        self.icon_preview = QLabel()
+        self.icon_preview.setFixedSize(64, 64)
+        self.icon_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.icon_preview.setFrameShape(QFrame.Shape.StyledPanel)
+        self.icon_preview.setAccessibleName("Selected tray icon preview")
+        icon_row.addWidget(self.icon_preview, alignment=Qt.AlignmentFlag.AlignTop)
+        details = QVBoxLayout()
+        details.setSpacing(6)
+        self.icon_label = QLabel()
+        self.icon_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.icon_label.setWordWrap(True)
+        font = self.icon_label.font()
+        font.setBold(True)
+        self.icon_label.setFont(font)
+        details.addWidget(self.icon_label)
+        self.icon_status = description("")
+        details.addWidget(self.icon_status)
+        actions = QHBoxLayout()
+        actions.setSpacing(8)
+        self.browse_button = QPushButton("Browse system icons…")
+        self.browse_button.setAutoDefault(False)
+        self.browse_button.clicked.connect(self.pick_icon)
+        actions.addWidget(self.browse_button)
+        self.restore_button = QPushButton("Restore default dynamic icon")
+        self.restore_button.setAutoDefault(False)
+        self.restore_button.clicked.connect(self.restore_default_icon)
+        actions.addWidget(self.restore_button)
+        actions.addStretch()
+        details.addLayout(actions)
+        icon_row.addLayout(details, stretch=1)
+        appearance_layout.addLayout(icon_row)
+
+        notice_row = QHBoxLayout()
+        notice_row.setSpacing(8)
+        self.icon_notice_symbol = QLabel()
+        notice_row.addWidget(self.icon_notice_symbol, alignment=Qt.AlignmentFlag.AlignTop)
+        self.icon_notice = description(
+            "Custom icons do not reflect whether your lights are on or off. "
+            "Restore the default Lysnav icon to re-enable dynamic lighting status."
         )
-        scroll_tip.setWordWrap(True)
-        shortcut_layout.addWidget(scroll_tip)
-        click_tip = QLabel(
-            "<b>Middle-click the icon:</b> Turn all approved lights in the selected "
-            "room on or off."
-        )
-        click_tip.setWordWrap(True)
-        shortcut_layout.addWidget(click_tip)
-        safety_tip = QLabel(
-            "These shortcuts only control lights you explicitly approved. "
-            "Scrolling never turns on a switched-off light."
-        )
-        safety_tip.setWordWrap(True)
-        shortcut_layout.addWidget(safety_tip)
-        layout.addWidget(shortcuts, stretch=1)
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
-        # Diagnostics belong with tray settings, not in an unrelated menu bar.
-        # ActionRole keeps the settings dialog open after viewing diagnostics.
-        inspect = buttons.addButton("Input diagnostics…", QDialogButtonBox.ButtonRole.ActionRole)
+        notice_row.addWidget(self.icon_notice, stretch=1)
+        appearance_layout.addLayout(notice_row)
+        layout.addWidget(appearance)
+
+        layout.addWidget(heading("Mouse controls"))
+        controls = QGridLayout()
+        controls.setContentsMargins(4, 0, 0, 0)
+        controls.setHorizontalSpacing(12)
+        controls.setVerticalSpacing(8)
+        controls.setColumnStretch(2, 1)
+        self._gesture_icons = []
+        for row, (name, explanation, middle_click) in enumerate((
+            ("Scroll", "Adjust brightness by 5% per notch for approved lights already on.", False),
+            ("Middle-click", "Toggle all approved lights in the selected room.", True),
+        )):
+            glyph = QLabel()
+            glyph.setPixmap(mouse_control_pixmap(self.palette(), middle_click))
+            self._gesture_icons.append((glyph, middle_click))
+            controls.addWidget(glyph, row, 0, Qt.AlignmentFlag.AlignVCenter)
+            controls.addWidget(QLabel(name), row, 1, Qt.AlignmentFlag.AlignVCenter)
+            controls.addWidget(description(explanation), row, 2)
+        layout.addLayout(controls)
+        layout.addWidget(description("Only approved lights are affected by these controls."))
+        layout.addStretch()
+        layout.addWidget(separator())
+
+        footer = QHBoxLayout()
+        inspect = QPushButton("Input diagnostics…")
+        inspect.setAutoDefault(False)
         inspect.clicked.connect(lambda: parent.show_tray_diagnostics(dialog_parent=self))
+        footer.addWidget(inspect)
+        footer.addStretch()
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        buttons.button(QDialogButtonBox.StandardButton.Save).setDefault(True)
+        footer.addWidget(buttons)
+        layout.addLayout(footer)
+        self.update_icon_preview()
+        # Let Qt derive the minimum height from font metrics and wrapped text.
+        # Never force a fixed dialog height on larger desktop fonts.
+
+    def update_icon_preview(self):
+        custom = custom_tray_qicon(self.icon_name)
+        has_custom = bool(self.icon_name)
+        valid_custom = has_custom and not custom.pixmap(48, 48).isNull()
+        if valid_custom:
+            icon = custom
+            self.icon_label.setText(Path(self.icon_name).name)
+            self.icon_status.setText("Dynamic lighting status disabled")
+        else:
+            if self._default_icon is not None:
+                icon = self._default_icon()
+            else:
+                mode = "dark" if panel_is_dark(self.palette()) else "light"
+                icon = QIcon(str(Path(__file__).parent / "assets" / f"tray-{mode}.svg"))
+            self.icon_label.setText("Table Lamp (default)")
+            self.icon_status.setText("Custom icon unavailable; using the default dynamic icon"
+                                     if has_custom else "Dynamic lighting status enabled")
+        self.icon_label.setToolTip(self.icon_name or "")
+        self.icon_preview.setPixmap(icon.pixmap(48, 48))
+        self.restore_button.setEnabled(has_custom)
+        symbol = (QStyle.StandardPixmap.SP_MessageBoxWarning if has_custom
+                  else QStyle.StandardPixmap.SP_MessageBoxInformation)
+        self.icon_notice_symbol.setPixmap(self.style().standardIcon(symbol).pixmap(18, 18))
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.PaletteChange and hasattr(self, "_gesture_icons"):
+            for glyph, middle_click in self._gesture_icons:
+                glyph.setPixmap(mouse_control_pixmap(self.palette(), middle_click))
+            if hasattr(self, "restore_button"):
+                self.update_icon_preview()
+
+    def restore_default_icon(self):
+        self.icon_name = ""
+        self.update_icon_preview()
 
     def pick_icon(self):
         picker = IconPickerDialog(self, self.icon_name)
         if picker.exec() == QDialog.DialogCode.Accepted:
             self.icon_name = picker.chosen
-            self.icon_label.setText(Path(self.icon_name).name or "Table Lamp (automatic)")
+            self.update_icon_preview()
         picker.deleteLater()
 
 
@@ -922,17 +1063,12 @@ class MainWindow(QMainWindow):
         return f"tray-{mode}{'-on' if active else ''}.svg"
 
     def _selected_qicon(self):
-        choice = self.config.get("tray_icon", "")
-        if choice:
-            if Path(choice).is_absolute():
-                custom = QIcon(choice)
-            else:
-                custom = QIcon.fromTheme(choice)
-                if custom.isNull():
-                    _, files = discover_system_icons()
-                    custom = QIcon(files.get(choice, ""))
-            if not custom.pixmap(24, 24).isNull():
-                return custom
+        custom = custom_tray_qicon(self.config.get("tray_icon", ""))
+        if not custom.pixmap(24, 24).isNull():
+            return custom
+        return self._default_qicon()
+
+    def _default_qicon(self):
         filename = self._default_panel_filename()
         if filename not in self._panel_icon_cache:
             self._panel_icon_cache[filename] = QIcon(str(Path(__file__).parent / "assets" / filename))
@@ -1112,7 +1248,8 @@ class MainWindow(QMainWindow):
         for light in approved_visible(self.lights, self.config["approved"]):
             rooms[light.room_id] = light.room_name
         dialog = TraySettingsDialog(self, self.config.get("tray_icon", ""),
-                                    self.config.get("tray_room", ""), rooms)
+                                    self.config.get("tray_room", ""), rooms,
+                                    default_icon=self._default_qicon)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.config["tray_icon"] = dialog.icon_name
             self.set_tray_room(dialog.room.currentData())

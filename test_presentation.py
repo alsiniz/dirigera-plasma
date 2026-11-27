@@ -40,14 +40,15 @@ class PresentationTests(unittest.TestCase):
 
     def test_ui_has_clean_button_labels_and_help(self):
         values = literals((ROOT / 'app.py').read_text())
-        for label in ('Choose devices', 'Tray settings', 'Tray icon',
-                      'Support on Ko-fi', 'Plasma panel shortcuts'):
+        for label in ('Choose devices', 'Tray settings', 'Tray appearance',
+                      'Support on Ko-fi', 'Mouse controls', 'Restore default dynamic icon'):
             self.assertIn(label, values)
         self.assertNotIn('Choose devices…', values)
         self.assertNotIn('Tray settings…', values)
         contents = (ROOT / 'app.py').read_text()
-        self.assertIn('Middle-click the icon', contents)
-        self.assertIn('Scroll over the icon', contents)
+        self.assertIn('Toggle all approved lights in the selected room.', contents)
+        self.assertIn('Adjust brightness by 5% per notch for approved lights already on.', contents)
+        self.assertIn('Custom icons do not reflect whether your lights are on or off.', contents)
         self.assertIn('DHCP reservation', contents)
         self.assertIn('QDesktopServices.openUrl(QUrl(KOFI_URL))', contents)
         self.assertIn('https://github.com/alsiniz', contents)

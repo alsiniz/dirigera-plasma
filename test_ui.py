@@ -11,7 +11,7 @@ try:
     from PySide6.QtCore import Qt, QPoint, QPointF, QCoreApplication, QEvent, QTimer
     from PySide6.QtTest import QTest
     from PySide6.QtGui import QColor, QIcon, QPalette, QWheelEvent
-    from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMenu, QScrollArea
+    from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMenu, QScrollArea, QDialog, QDialogButtonBox
     from shiboken6 import isValid
     from app import panel_is_dark, IconPickerDialog, ClickToJumpSlider, TraySettingsDialog, ConnectionDialog, MainWindow
     from core import EnvironmentInfo, LightInfo
@@ -62,6 +62,59 @@ class TraySettingsTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])
+
+    def test_preview_restore_and_cancel_are_staged(self):
+        parent = QWidget()
+        self.addCleanup(parent.deleteLater)
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "custom.svg"
+            path.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48">'
+                            '<rect width="48" height="48" fill="#176a95"/></svg>')
+            default = QIcon(str(Path(__file__).parent / "assets" / "tray-dark-on.svg"))
+            dialog = TraySettingsDialog(parent, str(path), "r1", {"r1": "Room"},
+                                        default_icon=lambda: default)
+            self.addCleanup(dialog.deleteLater)
+            self.assertTrue(dialog.restore_button.isEnabled())
+            self.assertEqual(dialog.icon_status.text(), "Dynamic lighting status disabled")
+            self.assertEqual(dialog.icon_preview.pixmap().toImage().pixelColor(24, 24).name(),
+                             "#176a95")
+            self.assertIn("Custom icons do not reflect", dialog.icon_notice.text())
+            dialog.restore_button.click()
+            self.assertEqual(dialog.icon_name, "")
+            self.assertFalse(dialog.restore_button.isEnabled())
+            self.assertEqual(dialog.icon_status.text(), "Dynamic lighting status enabled")
+            self.assertEqual(dialog.icon_preview.pixmap().toImage().pixelColor(24, 19).name(),
+                             "#fe8019")
+            self.assertEqual(dialog.room.currentData(), "r1")
+            dialog.reject()
+            self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
+
+    def test_picker_selection_updates_preview_but_cancel_keeps_selection(self):
+        parent = QWidget()
+        self.addCleanup(parent.deleteLater)
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "custom.svg"
+            path.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48">'
+                            '<rect width="48" height="48" fill="#176a95"/></svg>')
+            dialog = TraySettingsDialog(parent, "", "", {})
+            self.addCleanup(dialog.deleteLater)
+            self.assertFalse(dialog.restore_button.isEnabled())
+            with patch("app.IconPickerDialog") as picker:
+                picker.return_value.chosen = str(path)
+                picker.return_value.exec.return_value = QDialog.DialogCode.Accepted
+                dialog.browse_button.click()
+                self.assertEqual(dialog.icon_name, str(path))
+                self.assertTrue(dialog.restore_button.isEnabled())
+                self.assertEqual(dialog.icon_label.text(), "custom.svg")
+                self.assertEqual(dialog.icon_status.text(), "Dynamic lighting status disabled")
+                picker.return_value.chosen = ""
+                picker.return_value.exec.return_value = QDialog.DialogCode.Rejected
+                dialog.browse_button.click()
+                self.assertEqual(dialog.icon_name, str(path))
+            dialog.restore_button.click()
+            dialog.findChild(QDialogButtonBox).button(QDialogButtonBox.StandardButton.Save).click()
+            self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
+            self.assertEqual(dialog.icon_name, "")
 
     def test_diagnostics_accessible_from_tray_settings_without_closing(self):
         class FakeMain(QWidget):
