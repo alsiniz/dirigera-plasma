@@ -13,7 +13,7 @@ Control your lights from the desktop or system tray, see room temperature and hu
 [![License: MIT](https://img.shields.io/badge/License-MIT-2ea44f.svg)](LICENSE)
 [![Platform: Linux / KDE Plasma](https://img.shields.io/badge/Platform-Linux%20%7C%20KDE%20Plasma-1d99f3.svg)](#requirements)
 
-> **The pre-rebrand v1.0.1 is available as a Linux x86_64 AppImage.** This patch fixes memory growth during long-running tray sessions. The Flatpak is still undergoing runtime testing and is **not yet a published release asset**.
+> **Lysnav v1.0.3 is available as a Linux x86_64 AppImage.** The first public Lysnav build includes the fix for memory growth during long-running tray sessions. The Flatpak is still undergoing runtime testing.
 
 The screenshots on this page show the pre-rebrand release.
 
@@ -65,13 +65,14 @@ A hover reveals room climate readings. Scroll over the tray icon to change brigh
 
 ## Install
 
-### AppImage (recommended for v1.0.1)
+### AppImage
 
-Download `DIRIGERA-Plasma-v1.0.1-x86_64.AppImage` from the [pre-rebrand v1.0.1 release](https://github.com/alsiniz/lysnav-plasma/releases/tag/v1.0.1). This portable package needs no root privileges, separate smart-home hub, or Python setup.
+Download `Lysnav-Plasma-v1.0.3-x86_64.AppImage` and `SHA256SUMS.txt` from the [v1.0.3 release](https://github.com/alsiniz/lysnav-plasma/releases/tag/v1.0.3). Place both files in the same directory and run the following commands there. If an earlier version is running, choose **Quit** from its tray menu first.
 
 ```bash
-chmod +x DIRIGERA-Plasma-v1.0.1-x86_64.AppImage
-./DIRIGERA-Plasma-v1.0.1-x86_64.AppImage
+sha256sum -c SHA256SUMS.txt
+chmod +x Lysnav-Plasma-v1.0.3-x86_64.AppImage
+./Lysnav-Plasma-v1.0.3-x86_64.AppImage
 ```
 
 For convenience you may integrate the AppImage into your application launcher using a tool that supports AppImages; direct execution remains supported. An optional **nonfatal portal app-ID warning** may appear when starting directly from a download folder because the portable app is not registered as an installed desktop application.
@@ -144,15 +145,15 @@ Choose an app icon from the icon theme already installed and selected in KDE Pla
 
 **Important:** These restrictions apply to **this app**, not to the hub's access token. That token can potentially control *all* devices on the shared DIRIGERA hub. Someone who obtains it could use other software to control other residents' devices. Keep it private, just as you would a password.
 
-- App settings are stored in `~/.config/lysnav/config.json`, readable only by your local user account under the standard installation. Lysnav reads pairing, device approvals, and preferences from the previous `dirigera-plasma` configuration on upgrade. The access token is stored there; protect backups of this file.
+- On startup, the AppImage looks for `~/.config/lysnav/config.json`. If it is missing, Lysnav reads `~/.config/dirigera-plasma/config.json` to restore the hub pairing, light and sensor approvals, tray room, and custom icon choice. The first settings save writes the Lysnav file with owner-only permissions. The original stays in place. Both paths follow `XDG_CONFIG_HOME` if set. These files contain the hub access token, so keep their backups private.
 - No cloud connection or external account is required for day-to-day control. Opening the optional Ko-fi link uses your browser, by choice.
 - The app uses the **unofficial, undocumented local DIRIGERA API**. IKEA firmware updates could affect compatibility.
 
 ## Package availability
 
-| Format | v1.0.1 availability | Status |
+| Format | v1.0.3 availability | Status |
 | --- | --- | --- |
-| **AppImage (x86_64)** | [GitHub Releases](https://github.com/alsiniz/lysnav-plasma/releases/tag/v1.0.1) | The original v1.0.0 AppImage was tested on Bazzite / KDE Plasma, including clean in-app pairing |
+| **AppImage (x86_64)** | [GitHub Releases](https://github.com/alsiniz/lysnav-plasma/releases/tag/v1.0.3) | The original v1.0.0 AppImage was tested on Bazzite / KDE Plasma, including clean in-app pairing |
 | **Source installer** | This repository | Available; requires a one-time Python dependency download |
 | **Flatpak** | Not published | Builds in GitHub Actions, but actual KDE Plasma runtime behavior and pairing still need validation |
 

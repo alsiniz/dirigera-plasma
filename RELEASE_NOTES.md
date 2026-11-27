@@ -1,11 +1,21 @@
 # Lysnav for KDE Plasma
 
-## 1.0.2
+## 1.0.3
 
-The app now appears as **Lysnav for KDE Plasma** in the launcher, window, About dialog, and tray menu. Run the source installation with the command `lysnav`. Quit the previous version before starting Lysnav. It reads your existing hub pairing, approved devices, and tray preferences.
+This is the first public AppImage under the Lysnav name. It includes the table lamp logo, light and dark panel icons, and the v1.0.1 fix for memory growth during repeated hub refreshes. You can still choose a custom icon in Tray settings.
 
-The x86_64 AppImage includes the 1.0.1 fix for memory growth during hub refreshes. Run `sha256sum -c SHA256SUMS.txt` to verify the downloaded AppImage.
+### Download and run
 
-The Flatpak application ID is `io.github.alsiniz.Lysnav`. Users of the experimental earlier Flatpak should pair and approve their devices in the new sandbox.
+Download `Lysnav-Plasma-v1.0.3-x86_64.AppImage` and `SHA256SUMS.txt` into the same directory. Quit the old app from its tray menu, then run these commands from the download directory.
 
-The published [v1.0.1 AppImage and checksum](https://github.com/alsiniz/lysnav-plasma/releases/tag/v1.0.1) retain their original filenames. The [changelog](CHANGELOG.md) records the tray memory fix included in that release.
+```sh
+sha256sum -c SHA256SUMS.txt
+chmod +x Lysnav-Plasma-v1.0.3-x86_64.AppImage
+./Lysnav-Plasma-v1.0.3-x86_64.AppImage
+```
+
+### Upgrading from DIRIGERA Plasma
+
+The AppImage uses `~/.config/lysnav/config.json` if it exists. Otherwise it reads `~/.config/dirigera-plasma/config.json`, including the hub address and token, light and sensor approvals, selected tray room, and custom icon choice. You can start using your paired hub immediately. On the first settings save, Lysnav writes its own private file and uses it for subsequent launches. The old file stays in place. Both paths follow `XDG_CONFIG_HOME` if you set it.
+
+The source installer copies the old file during installation if Lysnav has no settings yet. The experimental Flatpak uses the separate `io.github.alsiniz.Lysnav` sandbox. If you used the old Flatpak, pair the hub and approve your devices again in the new sandbox. This release distributes the x86_64 AppImage.

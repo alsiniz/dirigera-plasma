@@ -2,11 +2,11 @@
 
 ## AppImage
 
-The pre-rebrand v1.0.1 release distributes `DIRIGERA-Plasma-v1.0.1-x86_64.AppImage` through [GitHub Releases](https://github.com/alsiniz/lysnav-plasma/releases). The AppImage is portable across many x86_64 Linux distributions, but **Bazzite KDE Plasma is the only environment explicitly verified so far**.
+The v1.0.3 release distributes `Lysnav-Plasma-v1.0.3-x86_64.AppImage` and its SHA-256 checksum through [GitHub Releases](https://github.com/alsiniz/lysnav-plasma/releases/tag/v1.0.3). Bazzite KDE Plasma is the distribution verified on a real desktop so far.
 
 Build: `./packaging/appimage/build.sh`. CI runs `.github/workflows/release-appimage.yml`, uploads the AppImage and `SHA256SUMS.txt`, and tags the build commit with the version from `version.py`.
 
-Future releases use `Lysnav-Plasma-<tag>-x86_64.AppImage` and `SHA256SUMS.txt`.
+Lysnav releases use `Lysnav-Plasma-<tag>-x86_64.AppImage` and `SHA256SUMS.txt`.
 
 A direct portable run may emit a nonfatal XDG desktop-portal app-ID warning because the AppImage is not installed as a registered desktop application.
 

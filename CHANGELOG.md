@@ -1,6 +1,11 @@
 # Changelog
 
-## 1.0.2 (2026-11-27)
+## [1.0.3] - 2026-11-27
+
+- Published the first stable AppImage under the Lysnav name. It includes the table lamp logo, monochrome panel icons, custom icon support, and the v1.0.1 tray memory fix.
+- Updated the download instructions and documented when the AppImage reads the old configuration and where it saves subsequent changes.
+
+## 1.0.2 (CI build only, 2026-11-27)
 
 - Includes the refresh-time memory fix from 1.0.1 for long-running tray sessions.
 - Adopted the Table Lamp logo and monochrome light- and dark-panel icons. KDE keeps saved overrides and accepts theme icons or local image files.
