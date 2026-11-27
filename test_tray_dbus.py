@@ -64,6 +64,16 @@ class NativeDBusTests(unittest.TestCase):
                     'org.freedesktop.DBus.Properties', 'Get', 'ss',
                     ['org.kde.StatusNotifierItem', 'Menu'])
                 self.assertEqual(menu_property.body[0].value, '/MenuBar')
+                # A sandboxed or user-supplied image must arrive as network-order ARGB,
+                # even when the panel cannot resolve a theme icon by name.
+                pixels = [[1, 1, bytes([255, 16, 32, 48])]]
+                item.update(icon='', pixmaps=pixels)
+                icon = await call('/StatusNotifierItem', 'org.freedesktop.DBus.Properties',
+                                  'Get', 'ss', ['org.kde.StatusNotifierItem', 'IconPixmap'])
+                self.assertEqual(icon.body[0].value, pixels)
+                item.update(icon='weather-clear')
+                self.assertEqual(item.IconName, 'weather-clear')
+                self.assertEqual(item.IconPixmap, [])
                 layout = await call('/MenuBar', 'com.canonical.dbusmenu',
                                     'GetLayout', 'iias', [0, -1, []])
                 self.assertEqual(layout.body[1][0], 0)

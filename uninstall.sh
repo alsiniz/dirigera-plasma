@@ -7,7 +7,7 @@ ID=io.github.alsiniz.Lysnav
 if [[ -L "$BIN/lysnav" && "$(readlink -- "$BIN/lysnav")" == "$DATA/lysnav/lysnav" ]]; then
   rm -- "$BIN/lysnav"
 fi
-rm -f -- "$DATA/applications/$ID.desktop" "$DATA/icons/hicolor/scalable/apps/$ID.svg"
+rm -f -- "$DATA/applications/$ID.desktop" "$DATA/icons/hicolor/scalable/apps/$ID.svg" "$DATA/icons/hicolor/scalable/apps/$ID-symbolic.svg"
 rm -rf -- "$DATA/lysnav"
 echo 'Lysnav for KDE Plasma application files removed.'
 echo "Private configuration remains at $CONFIG/lysnav/config.json"

@@ -31,11 +31,12 @@
       "name": "lysnav",
       "buildsystem": "simple",
       "build-commands": [
-        "install -d /app/bin /app/lib/lysnav /app/share/applications /app/share/icons/hicolor/scalable/apps /app/share/doc/lysnav /app/share/metainfo",
+        "install -d /app/bin /app/lib/lysnav/assets /app/share/applications /app/share/icons/hicolor/scalable/apps /app/share/doc/lysnav /app/share/metainfo",
         "install -m 644 app.py core.py tray_sni.py tray_compat.py tray_menu_model.py icon_theme.py pairing.py version.py /app/lib/lysnav/",
+        "install -m 644 assets/lysnav-logo.svg assets/tray-light.svg assets/tray-dark.svg /app/lib/lysnav/assets/",
         "install -m 755 packaging/flatpak/lysnav /app/bin/lysnav",
         "install -m 644 packaging/flatpak/io.github.alsiniz.Lysnav.desktop /app/share/applications/",
-        "install -m 644 assets/io.github.alsiniz.Lysnav.svg /app/share/icons/hicolor/scalable/apps/",
+        "install -m 644 assets/io.github.alsiniz.Lysnav.svg assets/io.github.alsiniz.Lysnav-symbolic.svg /app/share/icons/hicolor/scalable/apps/",
         "install -m 644 packaging/flatpak/io.github.alsiniz.Lysnav.metainfo.xml /app/share/metainfo/",
         "install -m 644 LICENSE THIRD_PARTY_NOTICES.md /app/share/doc/lysnav/"
       ],

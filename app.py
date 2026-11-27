@@ -2,6 +2,7 @@
 """Native KDE-friendly DIRIGERA lighting controller (no web server)."""
 from __future__ import annotations
 
+from array import array
 import math
 import os
 import queue
@@ -16,9 +17,9 @@ from tray_menu_model import build_menu
 from pairing import valid_hub_address, extract_generated_token, run_token_helper
 
 from PySide6.QtCore import Qt, QObject, QThread, Signal, QTimer, QPointF, QSize, QEvent, QUrl, QProcess, QProcessEnvironment
-from PySide6.QtGui import QColor, QPainter, QPen, QImage, QIcon, QPixmap, QCursor, QKeySequence, QShortcut, QDesktopServices
+from PySide6.QtGui import QColor, QPainter, QPen, QImage, QIcon, QCursor, QKeySequence, QShortcut, QDesktopServices
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QFileDialog,
     QLabel, QPushButton, QLineEdit, QDialog, QDialogButtonBox, QTreeWidget,
     QTreeWidgetItem, QMessageBox, QTabWidget, QScrollArea, QGroupBox, QSlider,
     QSystemTrayIcon, QMenu, QFrame, QSizePolicy, QComboBox, QListWidget, QListWidgetItem, QToolTip, QStyleOptionSlider, QStyle,
@@ -567,6 +568,10 @@ class IconPickerDialog(QDialog):
         if self.items.count() == 0:
             outer.addWidget(QLabel("No theme icons found. Check KDE System Settings → Colors & Themes → Icons."))
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        choose_file = buttons.addButton("Choose file…", QDialogButtonBox.ButtonRole.ActionRole)
+        choose_file.clicked.connect(self.choose_file)
+        default = buttons.addButton("Use default lamp", QDialogButtonBox.ButtonRole.ActionRole)
+        default.clicked.connect(self.choose_default)
         buttons.accepted.connect(self.accept_choice)
         buttons.rejected.connect(self.reject)
         outer.addWidget(buttons)
@@ -576,6 +581,19 @@ class IconPickerDialog(QDialog):
         for i in range(self.items.count()):
             item = self.items.item(i)
             item.setHidden(term not in item.text().casefold())
+
+    def choose_default(self):
+        self.chosen = ""
+        self.accept()
+
+    def choose_file(self):
+        filename, _ = QFileDialog.getOpenFileName(self, "Choose panel icon", "", "Icons (*.svg *.png)")
+        if filename:
+            if QIcon(filename).pixmap(32, 32).isNull():
+                QMessageBox.warning(self, "Choose panel icon", "This file could not be opened as an icon.")
+                return
+            self.chosen = filename
+            self.accept()
 
     def accept_choice(self, _item=None):
         item = self.items.currentItem()
@@ -653,7 +671,7 @@ class TraySettingsDialog(QDialog):
         form.addRow("Tray control room", self.room)
         icon_row = QHBoxLayout()
         self.icon_name = icon_name
-        self.icon_label = QLabel(icon_name)
+        self.icon_label = QLabel(Path(icon_name).name or "Table Lamp (automatic)")
         self.icon_label.setMinimumWidth(200)
         icon_row.addWidget(self.icon_label, stretch=1)
         browse = QPushButton("Browse system icons…")
@@ -698,7 +716,8 @@ class TraySettingsDialog(QDialog):
         picker = IconPickerDialog(self, self.icon_name)
         if picker.exec() == QDialog.DialogCode.Accepted:
             self.icon_name = picker.chosen
-            self.icon_label.setText(self.icon_name)
+            self.icon_label.setText(Path(self.icon_name).name or "Table Lamp (automatic)")
+        picker.deleteLater()
 
 
 class MainWindow(QMainWindow):
@@ -799,6 +818,7 @@ class MainWindow(QMainWindow):
         self.tray_signals.menu_action.connect(self.on_native_menu_action)
         self._tray_menu = self.create_tray_menu()
         self.update_tray_menu()
+        self._apply_panel_icon()
         self._create_native_tray()
 
     def _tray_ready(self):
@@ -841,9 +861,9 @@ class MainWindow(QMainWindow):
     def _create_native_tray(self):
         try:
             from tray_sni import StatusNotifierTray
+            name, pixmaps = self._notifier_icon(self.windowIcon())
             self.tray_sni = StatusNotifierTray(
-                self.tray_signals, self.config.get("tray_icon", "weather-clear"),
-                self._tray_tooltip(), self._native_menu_model())
+                self.tray_signals, name, self._tray_tooltip(), self._native_menu_model(), pixmaps)
             self._sni_service = self.tray_sni.service_name
             self.tray_sni.start()
         except Exception as exc:
@@ -856,14 +876,56 @@ class MainWindow(QMainWindow):
             self.on_tray_middle()
 
     def _selected_qicon(self):
-        icon = QIcon.fromTheme(self.config.get("tray_icon", "weather-clear"))
-        if icon.isNull():
-            icon = QIcon.fromTheme("preferences-desktop-display")
-        if icon.isNull():
-            pix = QPixmap(32, 32)
-            pix.fill(QColor("#eebd62"))
-            icon = QIcon(pix)
-        return icon
+        choice = self.config.get("tray_icon", "")
+        if choice:
+            if Path(choice).is_absolute():
+                custom = QIcon(choice)
+            else:
+                custom = QIcon.fromTheme(choice)
+                if custom.isNull():
+                    _, files = discover_system_icons()
+                    custom = QIcon(files.get(choice, ""))
+            if not custom.pixmap(24, 24).isNull():
+                return custom
+        dark = self.palette().window().color().lightness() < 128
+        filename = "tray-dark.svg" if dark else "tray-light.svg"
+        return QIcon(str(Path(__file__).parent / "assets" / filename))
+
+    def _notifier_icon(self, icon):
+        choice = self.config.get("tray_icon", "")
+        name = choice
+        if not choice:
+            symbolic = "io.github.alsiniz.Lysnav-symbolic"
+            # Installed desktops can recolour the named icon for the panel itself.
+            # Portable runs without that theme entry publish only their pixmaps.
+            if os.environ.get("FLATPAK_ID") or QIcon.hasThemeIcon(symbolic):
+                name = symbolic
+        if Path(name).is_absolute():
+            name = ""  # The panel may run outside the sandbox. Send the image itself.
+        pixmaps = []
+        for size in (16, 22, 32, 48, 64):
+            image = icon.pixmap(QSize(size, size), 1.0).toImage().convertToFormat(QImage.Format.Format_ARGB32)
+            if not image.isNull():
+                argb = array("I")
+                argb.frombytes(bytes(image.constBits()))
+                if sys.byteorder == "little":
+                    argb.byteswap()  # StatusNotifierItem specifies network-order ARGB32.
+                pixmaps.append([image.width(), image.height(), argb.tobytes()])
+        return name, pixmaps
+
+    def _apply_panel_icon(self):
+        icon = self._selected_qicon()
+        self.setWindowIcon(icon)
+        if self.tray:
+            self.tray.setIcon(icon)
+        if self.tray_sni:
+            name, pixmaps = self._notifier_icon(icon)
+            self.tray_sni.update(icon=name, pixmaps=pixmaps)
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.PaletteChange and hasattr(self, "tray_sni"):
+            self._apply_panel_icon()
 
     def _current_tray_room(self):
         return tray_room(self.lights, self.config["approved"], self.config.get("tray_room", ""))
@@ -896,9 +958,8 @@ class MainWindow(QMainWindow):
     def update_tray_tooltip(self):
         tip = self._tray_tooltip()
         if self.tray_sni:
-            self.tray_sni.update(icon=self.config.get("tray_icon", "weather-clear"), tooltip=tip)
+            self.tray_sni.update(tooltip=tip)
         if self.tray:
-            self.tray.setIcon(self._selected_qicon())
             self.tray.setToolTip(f"{APP_NAME}\n" + tip)
 
     def show_tray_menu(self, x=0, y=0):
@@ -996,12 +1057,12 @@ class MainWindow(QMainWindow):
         rooms = {}
         for light in approved_visible(self.lights, self.config["approved"]):
             rooms[light.room_id] = light.room_name
-        dialog = TraySettingsDialog(self, self.config.get("tray_icon", "weather-clear"),
+        dialog = TraySettingsDialog(self, self.config.get("tray_icon", ""),
                                     self.config.get("tray_room", ""), rooms)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.config["tray_icon"] = dialog.icon_name
             self.set_tray_room(dialog.room.currentData())
-            self.setWindowIcon(self._selected_qicon())
+            self._apply_panel_icon()
         dialog.deleteLater()
 
     def show_about(self):
@@ -1019,7 +1080,13 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(dialog)
         heading = QLabel(f'{APP_NAME}  ·  {VERSION}')
         heading.setStyleSheet('font-size: 20px; font-weight: bold')
-        layout.addWidget(heading)
+        logo = QLabel()
+        logo.setPixmap(QIcon(str(Path(__file__).parent / "assets" / "lysnav-logo.svg")).pixmap(
+            QSize(56, 56), dialog.devicePixelRatioF()))
+        header = QHBoxLayout()
+        header.addWidget(logo)
+        header.addWidget(heading, stretch=1)
+        layout.addLayout(header)
         text = QTextBrowser()
         text.setOpenExternalLinks(True)
         text.setHtml(f"""
@@ -1199,7 +1266,7 @@ class MainWindow(QMainWindow):
         self.config = {"ip": new_ip, "token": dialog.token.text().strip(),
                        "approved": dict(self.config["approved"]) if same_hub else {},
                        "approved_sensors": dict(self.config["approved_sensors"]) if same_hub else {},
-                       "tray_icon": self.config.get("tray_icon", "weather-clear"),
+                       "tray_icon": self.config.get("tray_icon", ""),
                        "tray_room": self.config.get("tray_room", "") if same_hub else ""}
         write_config(self.config)
         self.lights = []
@@ -1514,7 +1581,6 @@ def main():
     app.setApplicationDisplayName(APP_NAME)
     app.setQuitOnLastWindowClosed(False)
     window = MainWindow()
-    window.setWindowIcon(window._selected_qicon())
     window.show()
     sys.exit(app.exec())
 

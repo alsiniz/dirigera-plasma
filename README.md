@@ -1,5 +1,7 @@
 # Lysnav for KDE Plasma
 
+<img src="assets/lysnav-logo.svg" alt="Lysnav table lamp logo" width="96" height="96">
+
 The name **Lysnav** is a Scandinavian-inspired combination of *lys* (light) and *nav* (hub).
 
 Lysnav is an independent third-party application and is not affiliated with, endorsed by, or sponsored by IKEA.
@@ -65,7 +67,7 @@ A hover reveals room climate readings. Scroll over the tray icon to change brigh
 
 ### AppImage (recommended for v1.0.1)
 
-Download `DIRIGERA-Plasma-v1.0.1-x86_64.AppImage` from the [pre-rebrand v1.0.1 release](https://github.com/alsiniz/dirigera-plasma/releases/tag/v1.0.1). This portable package needs no root privileges, separate smart-home hub, or Python setup.
+Download `DIRIGERA-Plasma-v1.0.1-x86_64.AppImage` from the [pre-rebrand v1.0.1 release](https://github.com/alsiniz/lysnav-plasma/releases/tag/v1.0.1). This portable package needs no root privileges, separate smart-home hub, or Python setup.
 
 ```bash
 chmod +x DIRIGERA-Plasma-v1.0.1-x86_64.AppImage
@@ -79,12 +81,10 @@ For convenience you may integrate the AppImage into your application launcher us
 ### Source installation (alternative)
 
 ```bash
-git clone https://github.com/alsiniz/dirigera-plasma.git lysnav-plasma
+git clone https://github.com/alsiniz/lysnav-plasma.git
 cd lysnav-plasma
 ./install.sh
 ```
-
-The original clone URL also works after the repository moves to `alsiniz/lysnav-plasma`.
 
 Alternatively, select **Code → Download ZIP** on GitHub, extract it, then run `bash install.sh` from the extracted directory.
 
@@ -122,7 +122,7 @@ The app is **authorizing access to your existing hub**, not pairing the light bu
 | **Left-click** | Open the full controls window. |
 | **Right-click** | Open the native Plasma menu for quick actions, settings, and Quit. |
 
-Brightness scrolling shows a brief on-screen percentage and combines rapid wheel input before sending the command. Under **Tray settings**, choose the room controlled by tray actions and the **App icon** used by the panel and application window. Icons are resolved from your **current KDE icon theme** and its inherited themes; icon artwork is not bundled.
+Brightness scrolling shows a brief on-screen percentage and combines rapid wheel input before sending the command. Under **Tray settings**, choose the room controlled by tray actions and the **App icon** used by the panel and application window. The default Table Lamp follows the panel theme. The icon picker lets you choose an icon from your current KDE theme, use your own SVG or PNG, or restore the default. Previous icon choices are kept on upgrade.
 
 For finer control, open the window to change individual bulbs or approved bulbs within a room. The **Climate** tab provides read-only sensor information, including combined temperature and humidity data from supported split-endpoint devices such as IKEA TIMMERFLOTTE.
 
@@ -152,7 +152,7 @@ Choose an app icon from the icon theme already installed and selected in KDE Pla
 
 | Format | v1.0.1 availability | Status |
 | --- | --- | --- |
-| **AppImage (x86_64)** | [GitHub Releases](https://github.com/alsiniz/dirigera-plasma/releases/tag/v1.0.1) | The original v1.0.0 AppImage was tested on Bazzite / KDE Plasma, including clean in-app pairing |
+| **AppImage (x86_64)** | [GitHub Releases](https://github.com/alsiniz/lysnav-plasma/releases/tag/v1.0.1) | The original v1.0.0 AppImage was tested on Bazzite / KDE Plasma, including clean in-app pairing |
 | **Source installer** | This repository | Available; requires a one-time Python dependency download |
 | **Flatpak** | Not published | Builds in GitHub Actions, but actual KDE Plasma runtime behavior and pairing still need validation |
 
@@ -196,4 +196,4 @@ If this project makes your desktop a little more convenient, [support its develo
 
 ## Lysnav editions
 
-Lysnav for Windows (`alsiniz/lysnav-windows`) shares the desktop brand. The planned mobile edition is Lysnav for Android (`alsiniz/lysnav-android`). [View the icon proposals](docs/branding/README.md).
+Lysnav for Windows (`alsiniz/lysnav-windows`) shares the desktop brand. The planned mobile edition is Lysnav for Android (`alsiniz/lysnav-android`). [View the logo and panel icons](docs/branding/README.md).

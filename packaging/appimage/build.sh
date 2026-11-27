@@ -8,7 +8,7 @@ python3 -m venv .appimage-build-venv
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt 'pyinstaller>=6.11,<7'
 python -m PyInstaller --clean --noconfirm --onedir --name lysnav \
-  --collect-all dirigera --collect-all dbus_next \
+  --add-data "assets:assets" --collect-all dirigera --collect-all dbus_next \
   --hidden-import=dbus_next.aio --hidden-import=dbus_next.service app.py
 APPDIR="$ROOT/AppDir"
 rm -rf "$APPDIR"
@@ -18,7 +18,7 @@ cp -a dist/lysnav/. "$APPDIR/usr/bin/"
 # cannot parse current Fedora/Bazzite font rules (e.g. 48-guessfamily.conf).
 # Qt/Freetype remain bundled. Revalidate on each supported distro before release.
 rm -f "$APPDIR/usr/bin/_internal/libfontconfig.so.1"
-cp "assets/io.github.alsiniz.Lysnav.svg" "$APPDIR/usr/share/icons/hicolor/scalable/apps/"
+cp assets/io.github.alsiniz.Lysnav{,-symbolic}.svg "$APPDIR/usr/share/icons/hicolor/scalable/apps/"
 cp "packaging/flatpak/io.github.alsiniz.Lysnav.desktop" "$APPDIR/"
 cp "assets/io.github.alsiniz.Lysnav.svg" "$APPDIR/io.github.alsiniz.Lysnav.svg"
 cp LICENSE THIRD_PARTY_NOTICES.md "$APPDIR/usr/share/doc/lysnav/"

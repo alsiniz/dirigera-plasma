@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Adopted the Table Lamp logo and monochrome light- and dark-panel icons. KDE keeps saved overrides and accepts theme icons or local image files.
 - Renamed the app to Lysnav for KDE Plasma. The README and About view now identify Lysnav as an independent third-party app.
 - Renamed the executable to `lysnav` and the Flatpak and desktop ID to `io.github.alsiniz.Lysnav`. Native installs read existing pairing and device approvals on upgrade. The new Flatpak ID has its own sandbox.
 - Future AppImage downloads use the `Lysnav-Plasma-` prefix. Published releases retain their original filenames and checksums.

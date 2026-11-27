@@ -6,4 +6,4 @@ The app now appears as **Lysnav for KDE Plasma** in the launcher, window, About 
 
 The Flatpak application ID is `io.github.alsiniz.Lysnav`. Users of the experimental earlier Flatpak should pair and approve their devices in the new sandbox.
 
-The published [v1.0.1 AppImage and checksum](https://github.com/alsiniz/dirigera-plasma/releases/tag/v1.0.1) retain their original filenames. The [changelog](CHANGELOG.md) records the tray memory fix included in that release.
+The published [v1.0.1 AppImage and checksum](https://github.com/alsiniz/lysnav-plasma/releases/tag/v1.0.1) retain their original filenames. The [changelog](CHANGELOG.md) records the tray memory fix included in that release.

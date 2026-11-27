@@ -1,5 +1,7 @@
 """Qt slider regression test. Run with QT_QPA_PLATFORM=offscreen on CI."""
 from dataclasses import replace
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import os
 import unittest
 from unittest.mock import patch
@@ -8,10 +10,10 @@ os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 try:
     from PySide6.QtCore import Qt, QPoint, QPointF, QCoreApplication, QEvent, QTimer
     from PySide6.QtTest import QTest
-    from PySide6.QtGui import QWheelEvent
+    from PySide6.QtGui import QColor, QIcon, QPalette, QWheelEvent
     from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMenu, QScrollArea
     from shiboken6 import isValid
-    from app import ClickToJumpSlider, TraySettingsDialog, ConnectionDialog, MainWindow
+    from app import IconPickerDialog, ClickToJumpSlider, TraySettingsDialog, ConnectionDialog, MainWindow
     from core import EnvironmentInfo, LightInfo
 except ImportError:
     ClickToJumpSlider = None
@@ -105,6 +107,65 @@ class ConnectionDialogTests(unittest.TestCase):
         self.assertGreaterEqual(dialog.minimumWidth(), 620)
         dialog.close()
 
+
+
+@unittest.skipUnless(ClickToJumpSlider is not None, 'PySide6 not installed')
+class PanelIconTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.app = QApplication.instance() or QApplication([])
+
+    def test_panel_modes_and_custom_override(self):
+        settings = dict(ip='test', token='test', approved={}, approved_sensors={})
+        with patch('app.read_config', return_value=settings), patch.object(MainWindow, 'start_worker'), \
+                patch.object(MainWindow, '_create_native_tray'):
+            window = MainWindow()
+        self.addCleanup(window.deleteLater)
+
+        def set_background(colour):
+            palette = QPalette(window.palette())
+            palette.setColor(QPalette.ColorRole.Window, QColor(colour))
+            window.setPalette(palette)
+
+        def centre():
+            return window.windowIcon().pixmap(32, 32).toImage().pixelColor(16, 16).name()
+
+        set_background('#ffffff')
+        self.assertEqual(centre(), '#202020')
+        set_background('#121212')
+        self.assertEqual(centre(), '#f5f5f5')
+
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / 'custom.svg'
+            path.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">'
+                            '<rect width="16" height="16" fill="#176a95"/></svg>')
+            with patch('app.discover_system_icons', return_value=('test', {})):
+                picker = IconPickerDialog(window, '')
+            with patch('app.QFileDialog.getOpenFileName', return_value=(str(path), '')):
+                picker.choose_file()
+            window.config['tray_icon'] = picker.chosen
+            set_background('#ffffff')
+            self.assertEqual(centre(), '#176a95')
+            name, pixmaps = window._notifier_icon(window.windowIcon())
+            self.assertEqual(name, '')
+            self.assertEqual(pixmaps[0], [16, 16, bytes.fromhex('ff176a95') * 256])
+
+            window.config['tray_icon'] = 'my-installed-icon'
+            with patch.object(QIcon, 'fromTheme', return_value=QIcon(str(path))):
+                set_background('#121212')
+                self.assertEqual(centre(), '#176a95')
+                self.assertEqual(window._notifier_icon(window.windowIcon())[0], 'my-installed-icon')
+
+            picker.choose_default()
+            window.config['tray_icon'] = picker.chosen
+            window._apply_panel_icon()
+            self.assertEqual(centre(), '#f5f5f5')
+            with patch.object(QIcon, 'hasThemeIcon', return_value=True):
+                self.assertEqual(window._notifier_icon(window.windowIcon())[0], 'io.github.alsiniz.Lysnav-symbolic')
+            with patch.object(QIcon, 'hasThemeIcon', return_value=False), patch.dict(os.environ, FLATPAK_ID=''):
+                name, pixmaps = window._notifier_icon(window.windowIcon())
+                self.assertEqual(name, '')
+                self.assertTrue(pixmaps)
 
 
 @unittest.skipUnless(ClickToJumpSlider is not None, 'PySide6 not installed')

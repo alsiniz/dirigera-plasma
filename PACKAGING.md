@@ -2,7 +2,7 @@
 
 ## AppImage
 
-The pre-rebrand v1.0.1 release distributes `DIRIGERA-Plasma-v1.0.1-x86_64.AppImage` through [GitHub Releases](https://github.com/alsiniz/dirigera-plasma/releases). The AppImage is portable across many x86_64 Linux distributions, but **Bazzite KDE Plasma is the only environment explicitly verified so far**.
+The pre-rebrand v1.0.1 release distributes `DIRIGERA-Plasma-v1.0.1-x86_64.AppImage` through [GitHub Releases](https://github.com/alsiniz/lysnav-plasma/releases). The AppImage is portable across many x86_64 Linux distributions, but **Bazzite KDE Plasma is the only environment explicitly verified so far**.
 
 Build: `./packaging/appimage/build.sh`. CI runs `.github/workflows/release-appimage.yml`, uploads the AppImage and `SHA256SUMS.txt`, and tags the build commit with the version from `version.py`.
 

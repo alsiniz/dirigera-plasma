@@ -25,10 +25,11 @@ from dbus_next.service import ServiceInterface, dbus_property, method, signal
 
 
 class Item(ServiceInterface):
-    def __init__(self, signals, icon_name: str, tooltip: str):
+    def __init__(self, signals, icon_name: str, tooltip: str, pixmaps=None):
         super().__init__("org.kde.StatusNotifierItem")
         self.signals = signals
         self.icon_name = icon_name
+        self.pixmaps = pixmaps or []
         self.tooltip = tooltip
         self.scroll_calls = 0
         self.last_scroll = None
@@ -59,7 +60,7 @@ class Item(ServiceInterface):
 
     @dbus_property(access=PropertyAccess.READ)
     def IconPixmap(self) -> 'a(iiay)':
-        return []
+        return self.pixmaps
 
     @dbus_property(access=PropertyAccess.READ)
     def IconThemePath(self) -> 's':
@@ -133,9 +134,10 @@ class Item(ServiceInterface):
     def NewToolTip(self):
         pass
 
-    def update(self, icon=None, tooltip=None):
-        if icon is not None and icon != self.icon_name:
+    def update(self, icon=None, tooltip=None, pixmaps=None):
+        if icon is not None and (icon != self.icon_name or (pixmaps or []) != self.pixmaps):
             self.icon_name = icon
+            self.pixmaps = pixmaps or []
             self.NewIcon()
         if tooltip is not None and tooltip != self.tooltip:
             self.tooltip = tooltip
@@ -247,9 +249,10 @@ class NativeMenu(ServiceInterface):
 class StatusNotifierTray:
     """Starts a StatusNotifierItem in a thread and provides GUI-safe updates."""
 
-    def __init__(self, signals, icon_name: str, tooltip: str, menu_model):
+    def __init__(self, signals, icon_name: str, tooltip: str, menu_model, pixmaps=None):
         self.signals = signals
         self.icon_name = icon_name
+        self.pixmaps = pixmaps or []
         self.tooltip = tooltip
         self.menu_model = menu_model
         self.menu = None
@@ -283,7 +286,7 @@ class StatusNotifierTray:
         bus = await MessageBus(bus_type=BusType.SESSION).connect()
         self.bus = bus
         try:
-            self.item = Item(self.signals, self.icon_name, self.tooltip)
+            self.item = Item(self.signals, self.icon_name, self.tooltip, self.pixmaps)
             bus.export('/StatusNotifierItem', self.item)
             # Expose the real menu on the very same bus as the StatusNotifierItem.
             # Register both objects before registering the tray with Plasma:
@@ -343,10 +346,11 @@ class StatusNotifierTray:
             self.bus = None
             bus.disconnect()
 
-    def update(self, *, icon=None, tooltip=None, menu_model=None):
+    def update(self, *, icon=None, tooltip=None, menu_model=None, pixmaps=None):
         # Preserve changes racing with the initial D-Bus registration.
         if icon is not None:
             self.icon_name = icon
+            self.pixmaps = pixmaps or []
         if tooltip is not None:
             self.tooltip = tooltip
         if menu_model is not None:
@@ -354,7 +358,7 @@ class StatusNotifierTray:
         if self.loop and self.loop.is_running():
             try:
                 if self.item:
-                    self.loop.call_soon_threadsafe(self.item.update, icon, tooltip)
+                    self.loop.call_soon_threadsafe(self.item.update, icon, tooltip, pixmaps)
                 if menu_model is not None and self.menu:
                     self.loop.call_soon_threadsafe(self.menu.replace, menu_model)
             except RuntimeError:
