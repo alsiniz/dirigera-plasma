@@ -3,6 +3,7 @@
 ## [1.0.3] - 2026-11-27
 
 - Published the first stable AppImage under the Lysnav name. It includes the table lamp logo, monochrome panel icons, custom icon support, and the v1.0.1 tray memory fix.
+- Added the 256-pixel lamp icon used for the AppImage in file managers.
 - Updated the download instructions and documented when the AppImage reads the old configuration and where it saves subsequent changes.
 
 ## 1.0.2 (CI build only, 2026-11-27)

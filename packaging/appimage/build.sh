@@ -21,6 +21,8 @@ rm -f "$APPDIR/usr/bin/_internal/libfontconfig.so.1"
 cp assets/io.github.alsiniz.Lysnav{,-symbolic}.svg "$APPDIR/usr/share/icons/hicolor/scalable/apps/"
 cp "packaging/flatpak/io.github.alsiniz.Lysnav.desktop" "$APPDIR/"
 cp "assets/io.github.alsiniz.Lysnav.svg" "$APPDIR/io.github.alsiniz.Lysnav.svg"
+# appimagetool uses a raster copy of the desktop icon to create .DirIcon.
+cp packaging/appimage/io.github.alsiniz.Lysnav.png "$APPDIR/"
 cp LICENSE THIRD_PARTY_NOTICES.md "$APPDIR/usr/share/doc/lysnav/"
 cat > "$APPDIR/AppRun" <<'RUN'
 #!/bin/sh
