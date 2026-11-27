@@ -19,6 +19,8 @@ try:
     from app import panel_is_dark, IconPickerDialog, ClickToJumpSlider, TraySettingsDialog, ConnectionDialog, MainWindow
     from core import EnvironmentInfo, LightInfo
 except ImportError:
+    if os.environ.get('LYSNAV_REQUIRE_QT_TESTS') == '1':
+        raise
     ClickToJumpSlider = None
 
 
