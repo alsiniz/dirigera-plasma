@@ -19,7 +19,7 @@ from pairing import valid_hub_address, extract_generated_token, run_token_helper
 from PySide6.QtCore import Qt, QObject, QThread, Signal, QTimer, QPointF, QSize, QEvent, QUrl, QProcess, QProcessEnvironment
 from PySide6.QtGui import QColor, QPainter, QPen, QImage, QPixmap, QIcon, QCursor, QKeySequence, QShortcut, QDesktopServices
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout, QFileDialog,
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout, QFileDialog, QLayout,
     QLabel, QPushButton, QLineEdit, QDialog, QDialogButtonBox, QTreeWidget,
     QTreeWidgetItem, QMessageBox, QTabWidget, QScrollArea, QGroupBox, QSlider,
     QSystemTrayIcon, QMenu, QFrame, QSizePolicy, QComboBox, QListWidget, QListWidgetItem, QToolTip, QStyleOptionSlider, QStyle,
@@ -724,12 +724,13 @@ class TraySettingsDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("System tray settings")
         self.setMinimumWidth(600)
-        self.resize(730, 500)
+        self.resize(730, 570)
         self.icon_name = icon_name
         self._default_icon = default_icon
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(12)
+        layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
 
         def heading(text):
             label = QLabel(text)
@@ -767,7 +768,9 @@ class TraySettingsDialog(QDialog):
         appearance.setFrameShape(QFrame.Shape.StyledPanel)
         appearance_layout = QVBoxLayout(appearance)
         appearance_layout.setContentsMargins(12, 12, 12, 12)
-        appearance_layout.setSpacing(10)
+        appearance_layout.setSpacing(12)
+        appearance_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+        appearance.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
 
         icon_row = QHBoxLayout()
         icon_row.setSpacing(12)
@@ -788,7 +791,15 @@ class TraySettingsDialog(QDialog):
         details.addWidget(self.icon_label)
         self.icon_status = description("")
         details.addWidget(self.icon_status)
-        actions = QHBoxLayout()
+        details.addStretch()
+        icon_row.addLayout(details, stretch=1)
+        appearance_layout.addLayout(icon_row)
+
+        # Give the buttons their own full-width widget. The outer layout must
+        # reserve their height independently of the fixed-size icon preview.
+        action_row = QWidget(appearance)
+        actions = QHBoxLayout(action_row)
+        actions.setContentsMargins(0, 0, 0, 0)
         actions.setSpacing(8)
         self.browse_button = QPushButton("Browse system icons…")
         self.browse_button.setAutoDefault(False)
@@ -798,8 +809,7 @@ class TraySettingsDialog(QDialog):
         self.restore_button.setAutoDefault(False)
         self.restore_button.clicked.connect(self.restore_default_icon)
         actions.addWidget(self.restore_button)
-        # Native styles can otherwise squeeze this nested action row until
-        # button labels are clipped. Keep a shared, font-aware height floor.
+        # Keep a shared, font-aware height floor for both buttons.
         icon_buttons = (self.browse_button, self.restore_button)
         button_height = max(32, *(max(button.sizeHint().height(),
                                       button.fontMetrics().height() + 12)
@@ -808,11 +818,15 @@ class TraySettingsDialog(QDialog):
             button.setMinimumHeight(button_height)
             button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         actions.addStretch()
-        details.addLayout(actions)
-        icon_row.addLayout(details, stretch=1)
-        appearance_layout.addLayout(icon_row)
+        action_row.setMinimumHeight(button_height)
+        action_row.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        appearance_layout.addWidget(action_row)
 
-        notice_row = QHBoxLayout()
+        # Reserve a separate notice block, with a genuine 12px gap above it.
+        notice = QWidget(appearance)
+        notice.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        notice_row = QHBoxLayout(notice)
+        notice_row.setContentsMargins(0, 0, 0, 0)
         notice_row.setSpacing(8)
         self.icon_notice_symbol = QLabel()
         notice_row.addWidget(self.icon_notice_symbol, alignment=Qt.AlignmentFlag.AlignTop)
@@ -821,7 +835,7 @@ class TraySettingsDialog(QDialog):
             "Restore the default Lysnav icon to re-enable dynamic lighting status."
         )
         notice_row.addWidget(self.icon_notice, stretch=1)
-        appearance_layout.addLayout(notice_row)
+        appearance_layout.addWidget(notice)
         layout.addWidget(appearance)
 
         layout.addWidget(heading("Mouse controls"))
