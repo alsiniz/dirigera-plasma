@@ -40,7 +40,7 @@ class PresentationTests(unittest.TestCase):
 
     def test_ui_has_clean_button_labels_and_help(self):
         values = literals((ROOT / 'app.py').read_text())
-        for label in ('Choose devices', 'Tray settings', 'App icon',
+        for label in ('Choose devices', 'Tray settings', 'Tray icon',
                       'Support on Ko-fi', 'Plasma panel shortcuts'):
             self.assertIn(label, values)
         self.assertNotIn('Choose devices…', values)
