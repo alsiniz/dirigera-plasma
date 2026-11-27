@@ -26,7 +26,7 @@ and tray scrolling were confirmed working. This update should not change either.
    selected room, and icon are preserved.
 2. In the main window, verify **Choose devices** and **Tray settings** have no
    trailing ellipses and match the other buttons visually.
-3. Open **Tray settings**. Confirm **App icon** replaces **Tray icon**, the
+3. Open **Tray settings**. Confirm **Tray icon** affects only the notification area, the
    selected icon is preserved, and **Plasma panel shortcuts** explicitly
    explains scrolling over the panel icon and middle-clicking it. Confirm
    **Input diagnostics…** still opens from the settings dialog.
@@ -43,6 +43,21 @@ and tray scrolling were confirmed working. This update should not change either.
 8. Scroll over the real Plasma tray icon: the brightness percentage appears
    as short-lived **text-only** OSD feedback, with no placeholder icon.
 9. Verify that no other household member's lights were controlled.
+
+## Live tray icon and application branding acceptance test
+
+- In both desktop colour modes, turn the last approved light off and then
+  turn an approved light on in a different room. The transparent tray shade
+  should be orange only while at least one approved light is on.
+- Change an unapproved light; the default tray icon must not react. Test
+  physical switches and external controllers within the normal refresh cycle.
+- Switch desktop colours while lights are on and off; check the actual panel,
+  including an independently selected Plasma theme. Retest the custom tray
+  icon override and its default reset.
+- Interrupt hub access with an approved light on: the last known orange shade
+  must remain and the tooltip must mark status unverified. Restore access.
+- Check the full-colour logo in the launcher, task manager, window and
+  AppImage file icon (including upgrades; KDE may cache old launcher icons).
 
 ## Automated tests
 

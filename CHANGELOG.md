@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Default notification-area lamp now indicates the power state of all approved lights and follows the desktop colour mode.
+- Full-colour Lysnav logo is used for application windows, launchers and package icons; raster package icons are generated from the canonical SVG.
+
 ## [1.0.3] - 2026-11-27
 
 - Published the first stable AppImage under the Lysnav name. It includes the table lamp logo, monochrome panel icons, custom icon support, and the v1.0.1 tray memory fix.

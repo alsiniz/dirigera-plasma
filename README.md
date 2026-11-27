@@ -129,7 +129,7 @@ For finer control, open the window to change individual bulbs or approved bulbs 
 
 ### Match your Plasma theme
 
-Choose an app icon from the icon theme already installed and selected in KDE Plasma. No Breeze icons or separate icon packs are bundled with Lysnav for KDE Plasma.
+Choose a tray icon from the icon theme already installed and selected in KDE Plasma. No Breeze icons or separate icon packs are bundled with Lysnav for KDE Plasma.
 
 <p align="center">
   <img src="docs/screenshots/icon-picker.png" alt="Icon picker browsing icons from the active KDE Plasma icon theme" width="520">

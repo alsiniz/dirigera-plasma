@@ -13,7 +13,7 @@ try:
     from PySide6.QtGui import QColor, QIcon, QPalette, QWheelEvent
     from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMenu, QScrollArea
     from shiboken6 import isValid
-    from app import IconPickerDialog, ClickToJumpSlider, TraySettingsDialog, ConnectionDialog, MainWindow
+    from app import panel_is_dark, IconPickerDialog, ClickToJumpSlider, TraySettingsDialog, ConnectionDialog, MainWindow
     from core import EnvironmentInfo, LightInfo
 except ImportError:
     ClickToJumpSlider = None
@@ -115,7 +115,39 @@ class PanelIconTests(unittest.TestCase):
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])
 
+    def test_all_four_tray_assets_have_exact_colours_and_transparency(self):
+        assets = Path(__file__).resolve().parent / "assets"
+        for mode, base in (("light", "#282828"), ("dark", "#ebdbb2")):
+            for active in (False, True):
+                with self.subTest(mode=mode, active=active):
+                    suffix = "-on" if active else ""
+                    icon = QIcon(str(assets / f"tray-{mode}{suffix}.svg"))
+                    image = icon.pixmap(64, 64).toImage()
+                    self.assertFalse(image.isNull())
+                    self.assertEqual(image.pixelColor(32, 25).name(),
+                                     "#fe8019" if active else base)
+                    self.assertEqual(image.pixelColor(32, 50).name(), base)
+                    self.assertEqual(image.pixelColor(0, 0).alpha(), 0)
+        self.assertEqual((assets / "io.github.alsiniz.Lysnav.svg").read_bytes(),
+                         (assets / "lysnav-logo.svg").read_bytes())
+
+    def test_explicit_plasma_theme_precedes_app_palette(self):
+        palette = QPalette()
+        palette.setColor(QPalette.ColorRole.Window, QColor("#ffffff"))
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "plasmarc").write_text("[Theme]\nname=test-dark\n")
+            colours = root / "plasma" / "desktoptheme" / "test-dark" / "colors"
+            colours.parent.mkdir(parents=True)
+            colours.write_text("[Colors:Window]\nBackgroundNormal=32,32,32\n")
+            with patch.dict(os.environ, XDG_CONFIG_HOME=folder,
+                            XDG_DATA_HOME=folder, XDG_DATA_DIRS=folder):
+                self.assertTrue(panel_is_dark(palette))
+                colours.unlink()
+                self.assertFalse(panel_is_dark(palette))
+
     def test_panel_modes_and_custom_override(self):
+        self.enterContext(patch('app.panel_is_dark', side_effect=lambda p: p.window().color().lightness() < 128))
         settings = dict(ip='test', token='test', approved={}, approved_sensors={})
         with patch('app.read_config', return_value=settings), patch.object(MainWindow, 'start_worker'), \
                 patch.object(MainWindow, '_create_native_tray'):
