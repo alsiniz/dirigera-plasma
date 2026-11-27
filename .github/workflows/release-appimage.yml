@@ -25,8 +25,8 @@ jobs:
     env:
       QT_QPA_PLATFORM: offscreen
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Install AppImage build prerequisites
@@ -63,7 +63,7 @@ jobs:
           mv Lysnav-Plasma-x86_64.AppImage "$asset"
           chmod +x "$asset"
           sha256sum "$asset" > SHA256SUMS.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: Lysnav-Plasma-${{ steps.version.outputs.tag }}-assets
           path: |
