@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Prevented vertically compressed tray appearance buttons with a shared minimum height that accounts for native font and style metrics.
 - Redesigned Tray settings into room selection, tray appearance and aligned mouse controls. Added an icon preview, a clear custom-icon status disclaimer and a one-click restore-default action; changes are applied only on Save.
 - Default notification-area lamp now indicates the power state of all approved lights and follows the desktop colour mode.
 - Full-colour Lysnav logo is used for application windows, launchers and package icons; raster package icons are generated from the canonical SVG.
