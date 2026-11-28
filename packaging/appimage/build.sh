@@ -22,7 +22,14 @@ cp assets/io.github.alsiniz.Lysnav{,-symbolic}.svg "$APPDIR/usr/share/icons/hico
 cp "packaging/flatpak/io.github.alsiniz.Lysnav.desktop" "$APPDIR/"
 cp "assets/io.github.alsiniz.Lysnav.svg" "$APPDIR/io.github.alsiniz.Lysnav.svg"
 # appimagetool uses a raster copy of the desktop icon to create .DirIcon.
-cp packaging/appimage/io.github.alsiniz.Lysnav.png "$APPDIR/"
+QT_QPA_PLATFORM=offscreen python - "$APPDIR/io.github.alsiniz.Lysnav.png" <<'PY'
+import sys
+from PySide6.QtGui import QGuiApplication, QIcon
+app = QGuiApplication([])
+pixmap = QIcon("assets/lysnav-logo.svg").pixmap(256, 256)
+if pixmap.isNull() or not pixmap.save(sys.argv[1], "PNG"):
+    raise RuntimeError("Unable to render the AppImage logo")
+PY
 cp LICENSE THIRD_PARTY_NOTICES.md "$APPDIR/usr/share/doc/lysnav/"
 cat > "$APPDIR/AppRun" <<'RUN'
 #!/bin/sh

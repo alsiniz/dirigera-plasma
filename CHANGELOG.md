@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.4] - 2026-11-28
+
+- Redesigned Hub settings and token pairing with token reveal/copy controls, a two-action pairing guide, palette-adaptive vector illustration, and static IP/DHCP reservation guidance.
+- Separated tray appearance controls and disclaimer into independent layout rows with reserved vertical clearance, including at the dialog's minimum size.
+- Prevented vertically compressed tray appearance buttons with a shared minimum height that accounts for native font and style metrics.
+- Redesigned Tray settings into room selection, tray appearance and aligned mouse controls. Added an icon preview, a clear custom-icon status disclaimer and a one-click restore-default action; changes are applied only on Save.
+- The default tray lamp turns orange when any approved light in the tray selection is on. Choose one room or All approved lights for the indicator, middle-click and brightness scrolling.
+- Automatic refresh retries after the first hub check fails.
+- Full-colour Lysnav logo is used for application windows, launchers and package icons; raster package icons are generated from the canonical SVG.
+
 ## [1.0.3] - 2026-11-27
 
 - Published the first stable AppImage under the Lysnav name. It includes the table lamp logo, monochrome panel icons, custom icon support, and the v1.0.1 tray memory fix.

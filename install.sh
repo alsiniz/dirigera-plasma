@@ -29,7 +29,7 @@ for file in LICENSE THIRD_PARTY_NOTICES.md README.md; do
   install -m 644 "$SRC/$file" "$APP/$file"
 done
 mkdir -p "$APP/assets"
-install -m 644 "$SRC/assets/"{lysnav-logo,tray-light,tray-dark}.svg "$APP/assets/"
+install -m 644 "$SRC/assets/"{lysnav-logo,tray-light,tray-dark,tray-light-on,tray-dark-on}.svg "$APP/assets/"
 install -m 644 "$SRC/assets/$ID-symbolic.svg" "$ICON_DIR/$ID-symbolic.svg"
 install -m 644 "$SRC/assets/$ID.svg" "$ICON_DIR/$ID.svg"
 

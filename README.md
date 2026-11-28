@@ -13,7 +13,7 @@ Control your lights from the desktop or system tray, see room temperature and hu
 [![License: MIT](https://img.shields.io/badge/License-MIT-2ea44f.svg)](LICENSE)
 [![Platform: Linux / KDE Plasma](https://img.shields.io/badge/Platform-Linux%20%7C%20KDE%20Plasma-1d99f3.svg)](#requirements)
 
-> **Lysnav v1.0.3 is available as a Linux x86_64 AppImage.** The first public Lysnav build includes the fix for memory growth during long-running tray sessions. The Flatpak is still undergoing runtime testing.
+> **Lysnav v1.0.4 is available as a Linux x86_64 AppImage.** The tray indicator and controls share the same light selection, and Hub settings has a new pairing guide. The Flatpak is still undergoing runtime testing.
 
 The screenshots on this page show the pre-rebrand release.
 
@@ -28,7 +28,7 @@ The screenshots on this page show the pre-rebrand release.
 Your smart lights shouldn't require unlocking your phone every time you want to dim them. Lysnav for KDE Plasma brings lighting controls to the desktop you're already using. It communicates **directly with the IKEA DIRIGERA hub on your local network**, leaving the hub to manage its connected lights and sensors.
 
 - **Local and private:** No cloud account, login, telemetry, or remote automation server is required by Lysnav for KDE Plasma. After installation, normal operation works without internet access, provided the PC and hub can communicate over your LAN.
-- **Control without opening a window:** Scroll over the Plasma tray icon to dim or brighten; middle-click to toggle the lights in your selected room. The tray's native right-click menu gives quick access to the app.
+- **Control without opening a window:** Scroll over the Plasma tray icon to dim or brighten; middle-click to toggle the lights in your tray selection. The tray's native right-click menu gives quick access to the app.
 - **GUI-first hub authorization:** Generate the hub access token inside the app. No copying commands or tokens from a terminal during setup.
 - **Built for shared homes:** Approve only the bulbs you want the app to control. Other residents' bulbs remain outside its lighting controls.
 - **Climate at a glance:** Hover over the tray icon to see approved temperature and humidity readings, or open the Climate tab for more information.
@@ -48,7 +48,7 @@ Move the colour wheel to preview changes immediately on your approved RGB lights
 
 ### At a glance, without opening a window
 
-A hover reveals room climate readings. Scroll over the tray icon to change brightness, middle-click to toggle your approved room lights, or right-click for native Plasma actions.
+A hover reveals room climate readings. Scroll over the tray icon to change brightness, middle-click to toggle your selected approved lights, or right-click for native Plasma actions.
 
 | Climate readings on hover | Native Plasma tray menu |
 | :---: | :---: |
@@ -67,12 +67,12 @@ A hover reveals room climate readings. Scroll over the tray icon to change brigh
 
 ### AppImage
 
-Download `Lysnav-Plasma-v1.0.3-x86_64.AppImage` and `SHA256SUMS.txt` from the [v1.0.3 release](https://github.com/alsiniz/lysnav-plasma/releases/tag/v1.0.3). Place both files in the same directory and run the following commands there. If an earlier version is running, choose **Quit** from its tray menu first.
+Download `Lysnav-Plasma-v1.0.4-x86_64.AppImage` and `SHA256SUMS.txt` from the [v1.0.4 release](https://github.com/alsiniz/lysnav-plasma/releases/tag/v1.0.4). Place both files in the same directory and run the following commands there. If an earlier version is running, choose **Quit** from its tray menu first.
 
 ```bash
 sha256sum -c SHA256SUMS.txt
-chmod +x Lysnav-Plasma-v1.0.3-x86_64.AppImage
-./Lysnav-Plasma-v1.0.3-x86_64.AppImage
+chmod +x Lysnav-Plasma-v1.0.4-x86_64.AppImage
+./Lysnav-Plasma-v1.0.4-x86_64.AppImage
 ```
 
 For convenience you may integrate the AppImage into your application launcher using a tool that supports AppImages; direct execution remains supported. An optional **nonfatal portal app-ID warning** may appear when starting directly from a download folder because the portable app is not registered as an installed desktop application.
@@ -118,18 +118,18 @@ The app is **authorizing access to your existing hub**, not pairing the light bu
 | Interaction | What happens |
 | --- | --- |
 | **Hover** | View temperature and humidity from your approved climate sensors. |
-| **Scroll up or down** | Adjust brightness of approved, currently-on bulbs in the selected room, in 5% steps. Off bulbs remain off. |
-| **Middle-click** | Toggle approved room lights together. |
+| **Scroll up or down** | Adjust brightness of approved lights in the tray selection that are already on, in 5% steps. Off bulbs remain off. |
+| **Middle-click** | Toggle the selected approved lights together. |
 | **Left-click** | Open the full controls window. |
 | **Right-click** | Open the native Plasma menu for quick actions, settings, and Quit. |
 
-Brightness scrolling shows a brief on-screen percentage and combines rapid wheel input before sending the command. Under **Tray settings**, choose the room controlled by tray actions and the **App icon** used by the panel and application window. The default Table Lamp follows the panel theme. The icon picker lets you choose an icon from your current KDE theme, use your own SVG or PNG, or restore the default. Previous icon choices are kept on upgrade.
+Brightness scrolling shows a brief on-screen percentage and combines rapid wheel input before sending the command. In **Tray settings**, choose a room or **All approved lights**. The default Table Lamp follows the panel theme, turns orange when any light in that selection is on, and stays monochrome when they are all off. The launcher and application window always use the full-colour Lysnav logo. The **Tray appearance** section previews your selection and lets you browse the current KDE icon theme or choose your own SVG/PNG. Custom icons do not reflect lighting power; use **Restore default dynamic icon** to re-enable the live indicator. Save applies the selection and Cancel leaves it unchanged. Existing room and icon choices are kept on upgrade. If you previously used Automatic with approvals in more than one room, choose a tray selection.
 
 For finer control, open the window to change individual bulbs or approved bulbs within a room. The **Climate** tab provides read-only sensor information, including combined temperature and humidity data from supported split-endpoint devices such as IKEA TIMMERFLOTTE.
 
 ### Match your Plasma theme
 
-Choose an app icon from the icon theme already installed and selected in KDE Plasma. No Breeze icons or separate icon packs are bundled with Lysnav for KDE Plasma.
+Choose a tray icon from the icon theme already installed and selected in KDE Plasma. No Breeze icons or separate icon packs are bundled with Lysnav for KDE Plasma.
 
 <p align="center">
   <img src="docs/screenshots/icon-picker.png" alt="Icon picker browsing icons from the active KDE Plasma icon theme" width="520">
@@ -151,9 +151,9 @@ Choose an app icon from the icon theme already installed and selected in KDE Pla
 
 ## Package availability
 
-| Format | v1.0.3 availability | Status |
+| Format | v1.0.4 availability | Status |
 | --- | --- | --- |
-| **AppImage (x86_64)** | [GitHub Releases](https://github.com/alsiniz/lysnav-plasma/releases/tag/v1.0.3) | The original v1.0.0 AppImage was tested on Bazzite / KDE Plasma, including clean in-app pairing |
+| **AppImage (x86_64)** | [GitHub Releases](https://github.com/alsiniz/lysnav-plasma/releases/tag/v1.0.4) | The original v1.0.0 AppImage was tested on Bazzite / KDE Plasma, including clean in-app pairing |
 | **Source installer** | This repository | Available; requires a one-time Python dependency download |
 | **Flatpak** | Not published | Builds in GitHub Actions, but actual KDE Plasma runtime behavior and pairing still need validation |
 
@@ -198,3 +198,7 @@ If this project makes your desktop a little more convenient, [support its develo
 ## Lysnav editions
 
 Lysnav for Windows (`alsiniz/lysnav-windows`) shares the desktop brand. The planned mobile edition is Lysnav for Android (`alsiniz/lysnav-android`). [View the logo and panel icons](docs/branding/README.md).
+
+### Hub credentials and pairing
+
+In **Hub settings**, the token is masked by default. **Show** reveals it, **Hide** masks it again, and **Copy** copies it without revealing it. Keep the token and clipboard contents private. **Generate token…** starts the local pairing helper; press the action button on the underside of DIRIGERA (not the reset pinhole), then click Continue. A newly received token remains masked and is only persisted on Save. Assign a static local IP through a DHCP reservation on your router for reliable reconnection.
