@@ -16,12 +16,12 @@ from icon_theme import active_theme, search_paths, discover_icon_files
 from tray_menu_model import build_menu
 from pairing import valid_hub_address, extract_generated_token, run_token_helper
 
-from PySide6.QtCore import QByteArray, Qt, QObject, QThread, Signal, QTimer, QPointF, QSize, QEvent, QUrl, QProcess, QProcessEnvironment
+from PySide6.QtCore import QByteArray, Qt, QObject, QThread, Signal, QTimer, QPointF, QSize, QEvent, QRect, QUrl, QProcess, QProcessEnvironment
 from PySide6.QtGui import QColor, QPainter, QPen, QImage, QPixmap, QIcon, QCursor, QKeySequence, QShortcut, QDesktopServices
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout, QFileDialog, QLayout,
-    QLabel, QPushButton, QLineEdit, QDialog, QDialogButtonBox, QTreeWidget,
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QFileDialog, QLayout,
+    QLabel, QPushButton, QLineEdit, QDialog, QDialogButtonBox, QPlainTextEdit, QHeaderView, QTreeWidget,
     QTreeWidgetItem, QMessageBox, QTabWidget, QScrollArea, QGroupBox, QSlider,
     QSystemTrayIcon, QMenu, QFrame, QSizePolicy, QComboBox, QListWidget, QListWidgetItem, QToolTip, QStyleOptionSlider, QStyle,
 )
@@ -215,11 +215,11 @@ class WheelDialog(QDialog):
         self._preview_callback = preview_callback
         self._finished_callback = finished_callback
         self._dirty = False
-        layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("Drag around the wheel to preview colours on your approved lights."))
+        outer, scroll, layout = scrollable_form(self)
+        layout.addWidget(wrapped_label("Drag around the wheel to preview colours on your approved lights."))
         self.wheel = Wheel(hue, saturation)
         layout.addWidget(self.wheel, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.readout = QLabel()
+        self.readout = wrapped_label("")
         self.readout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.readout)
         self.wheel.selection_changed.connect(self.update_readout)
@@ -231,10 +231,9 @@ class WheelDialog(QDialog):
         self.preview_timer.timeout.connect(self.flush_preview)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.rejected.connect(self.close)
-        layout.addWidget(buttons)
-        note = QLabel("Colours apply as you move. Close keeps the last selected colour; there is no Cancel/undo.")
-        note.setWordWrap(True)
-        layout.addWidget(note)
+        outer.addWidget(buttons)
+        layout.addWidget(wrapped_label("Colours apply as you move. Close keeps the last selected colour; there is no Cancel/undo."))
+        fit_window(self, 54, scroll=scroll)
 
     def update_readout(self, h, s, schedule=True):
         self.readout.setText(f"Hue {round(h)}°    ·    Saturation {round(s * 100)}%")
@@ -254,8 +253,136 @@ class WheelDialog(QDialog):
         super().closeEvent(event)
 
 
+class WrappingLayout(QLayout):
+    """Place controls in rows using their current style and font size hints."""
+
+    def __init__(self):
+        super().__init__()
+        self.setContentsMargins(0, 0, 0, 0)
+        self._items = []
+
+    def addItem(self, item):
+        self._items.append(item)
+
+    def count(self):
+        return len(self._items)
+
+    def itemAt(self, index):
+        return self._items[index] if 0 <= index < len(self._items) else None
+
+    def takeAt(self, index):
+        return self._items.pop(index) if 0 <= index < len(self._items) else None
+
+    def hasHeightForWidth(self):
+        return True
+
+    def minimumSize(self):
+        size = QSize(0, 0)
+        for item in self._items:
+            size = size.expandedTo(item.minimumSize())
+        return size
+
+    def sizeHint(self):
+        sizes = [item.sizeHint() for item in self._items if not item.isEmpty()]
+        width = sum(size.width() for size in sizes) + max(0, len(sizes) - 1) * self._spacing()
+        return QSize(width, max((size.height() for size in sizes), default=0))
+
+    def heightForWidth(self, width):
+        return self._arrange(QRect(0, 0, width, 0), False)
+
+    def setGeometry(self, rect):
+        super().setGeometry(rect)
+        self._arrange(rect, True)
+
+    def _spacing(self):
+        return max(0, self.spacing())
+
+    def _arrange(self, rect, place):
+        spacing = self._spacing()
+        x = y = row_height = 0
+        for item in self._items:
+            if item.isEmpty():
+                continue
+            size = item.sizeHint().expandedTo(item.minimumSize())
+            if x and x + size.width() > rect.width():
+                x = 0
+                y += row_height + spacing
+                row_height = 0
+            if place:
+                bounds = QRect(rect.x() + x, rect.y() + y, size.width(), size.height())
+                item.setGeometry(QStyle.visualRect(self.parentWidget().layoutDirection(), rect, bounds))
+            x += size.width() + spacing
+            row_height = max(row_height, size.height())
+        return y + row_height
+
+
+def wrapping_form():
+    row = QFormLayout()
+    row.setContentsMargins(0, 0, 0, 0)
+    row.setLabelAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignTop)
+    row.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
+    row.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+    return row
+
+
+def wrapping_pair(label, field):
+    row = wrapping_form()
+    row.addRow(label, field)
+    return row
+
+
+def scrollable_form(parent):
+    """Let wrapped content grow at the viewport width and keep actions visible."""
+    outer = QVBoxLayout(parent)
+    scroll = QScrollArea(parent)
+    scroll.setFrameShape(QFrame.Shape.NoFrame)
+    scroll.setWidgetResizable(True)
+    content = QWidget()
+    layout = QVBoxLayout(content)
+    layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+    scroll.setWidget(content)
+    outer.addWidget(scroll, 1)
+    return outer, scroll, layout
+
+
+def fit_window(window, columns, lines=None, scroll=None):
+    """Choose an initial size in font units within the owner's available screen."""
+    window.ensurePolished()
+    metrics = window.fontMetrics()
+    owner = window.parentWidget()
+    available = (owner or window).screen().availableGeometry().size()
+    style = window.style()
+    edge = style.pixelMetric(QStyle.PixelMetric.PM_DefaultFrameWidth, widget=window) * 4
+    title = style.pixelMetric(QStyle.PixelMetric.PM_TitleBarHeight, widget=window)
+    bounds = available - QSize(edge, title + edge)
+    window.layout().activate()
+    minimum = window.minimumSizeHint()
+    width = min(bounds.width(), max(minimum.width(), metrics.horizontalAdvance("0") * columns))
+    if scroll is not None:
+        layout = window.layout()
+        inner_width = width - layout.contentsMargins().left() - layout.contentsMargins().right()
+        body = scroll.widget().layout()
+        body.activate()
+        height = max(body.minimumSize().height(), body.totalHeightForWidth(inner_width))
+        height += layout.sizeHint().height() - scroll.sizeHint().height()
+    else:
+        height = metrics.lineSpacing() * lines
+    window.resize(width, min(bounds.height(), max(height, minimum.height())))
+
+
+def text_dialog(parent, title, text):
+    dialog = QDialog(parent)
+    dialog.setWindowTitle(title)
+    layout = QVBoxLayout(dialog)
+    details = QPlainTextEdit(text, dialog)
+    details.setReadOnly(True)
+    details.setAccessibleName(title)
+    layout.addWidget(details)
+    return dialog, layout
+
+
 def section_heading(text):
-    label = QLabel(text)
+    label = wrapped_label(text)
     font = label.font()
     font.setBold(True)
     if font.pointSize() > 0:
@@ -264,10 +391,11 @@ def section_heading(text):
     return label
 
 
-def wrapped_label(text):
+def wrapped_label(text, *, rich=False):
     label = QLabel(text)
+    label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
     label.setWordWrap(True)
-    label.setTextFormat(Qt.TextFormat.PlainText)
+    label.setTextFormat(Qt.TextFormat.RichText if rich else Qt.TextFormat.PlainText)
     return label
 
 
@@ -329,18 +457,13 @@ class TokenPairingDialog(QDialog):
     def __init__(self, parent, ip: str):
         super().__init__(parent)
         self.setWindowTitle("Generate DIRIGERA access token")
-        self.setMinimumWidth(540)
-        self.resize(640, 420)
         self.generated_token = None
         self.ip = ip
         self._output = bytearray()
         self._retry = False
         self._closing = False
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
-        layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+        outer, scroll, layout = scrollable_form(self)
         layout.addWidget(section_heading("Pair with your hub"))
         layout.addWidget(wrapped_label("Generate a new access token for Lysnav to communicate with your DIRIGERA hub locally."))
 
@@ -360,22 +483,19 @@ class TokenPairingDialog(QDialog):
         status_layout.addLayout(status_text, 1)
         layout.addWidget(status_frame)
         layout.addWidget(section_heading("What you need to do"))
-        instructions = QHBoxLayout()
-        instructions.setSpacing(16)
         self.hub_illustration = HubActionIllustration()
-        instructions.addWidget(self.hub_illustration, alignment=Qt.AlignmentFlag.AlignVCenter)
-        steps = QVBoxLayout()
-        steps.setSpacing(12)
+        steps = QWidget()
+        steps_layout = QVBoxLayout(steps)
+        steps_layout.setContentsMargins(0, 0, 0, 0)
+        steps_layout.addStretch(1)
         for text in ("<b>1. Press the action button</b> on the underside of your DIRIGERA hub.",
                      "<b>2. Click Continue</b> below to complete pairing."):
-            label = QLabel(text)
-            label.setWordWrap(True)
-            steps.addWidget(label)
-        instructions.addLayout(steps, 1)
-        layout.addLayout(instructions)
+            steps_layout.addWidget(wrapped_label(text, rich=True))
+        steps_layout.addStretch(1)
+        layout.addLayout(wrapping_pair(self.hub_illustration, steps))
         layout.addWidget(wrapped_label("Your access token is stored locally when you save your hub settings. Keep it private."))
         layout.addStretch()
-        layout.addWidget(section_divider())
+        outer.addWidget(section_divider())
         row = QHBoxLayout()
         self.continue_button = QPushButton("Continue")
         self.continue_button.setEnabled(False)
@@ -385,7 +505,7 @@ class TokenPairingDialog(QDialog):
         row.addStretch()
         row.addWidget(self.continue_button)
         row.addWidget(cancel)
-        layout.addLayout(row)
+        outer.addLayout(row)
         self._set_status("Preparing pairing…", "Lysnav is starting the local pairing request.")
 
         self.process = QProcess(self)
@@ -398,6 +518,7 @@ class TokenPairingDialog(QDialog):
         self._start_timer = QTimer(self)
         self._start_timer.setSingleShot(True)
         self._start_timer.timeout.connect(self._start)
+        fit_window(self, 76, scroll=scroll)
         self._start_timer.start(0)
 
     def _set_status(self, title, message, failed=False):
@@ -494,34 +615,30 @@ class ConnectionDialog(QDialog):
     def __init__(self, parent, config):
         super().__init__(parent)
         self.setWindowTitle("Hub settings")
-        self.setMinimumSize(620, 335)
-        self.resize(720, 455)
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(16, 16, 16, 16)
-        outer.setSpacing(12)
-        outer.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
-        outer.addWidget(section_heading("Hub connection"))
-        outer.addWidget(wrapped_label("Connect Lysnav to your local IKEA DIRIGERA hub."))
+        outer, scroll, form = scrollable_form(self)
+        form.addWidget(section_heading("Hub connection"))
+        form.addWidget(wrapped_label("Connect Lysnav to your local IKEA DIRIGERA hub."))
         address_label = QLabel("Hub address")
         self.ip = QLineEdit(config.get("ip", ""))
         self.ip.setPlaceholderText("192.168.1.20")
         address_label.setBuddy(self.ip)
-        outer.addWidget(address_label)
-        outer.addWidget(self.ip)
+        form.addWidget(address_label)
+        form.addWidget(self.ip)
         self.address_help = wrapped_label("")
-        outer.addWidget(self.address_help)
+        form.addWidget(self.address_help)
         self.ip.textChanged.connect(self.reset_address_help)
         self.reset_address_help()
-        outer.addWidget(section_divider())
+        form.addWidget(section_divider())
 
         token_label = section_heading("Access token")
         self.token = QLineEdit(config.get("token", ""))
         self.token.setEchoMode(QLineEdit.EchoMode.Password)
         self.token.setPlaceholderText("Access token")
         token_label.setBuddy(self.token)
-        outer.addWidget(token_label)
+        form.addWidget(token_label)
         token_row = QHBoxLayout()
         token_row.setSpacing(8)
+        self.token.setMinimumWidth(self.token.fontMetrics().horizontalAdvance("000000"))
         token_row.addWidget(self.token, 1)
         self.show_token_button = QPushButton("Show")
         self.show_token_button.setCheckable(True)
@@ -535,21 +652,18 @@ class ConnectionDialog(QDialog):
         self.copy_token_button.setAccessibleName("Copy access token")
         self.copy_token_button.clicked.connect(self.copy_token)
         token_row.addWidget(self.copy_token_button)
-        outer.addLayout(token_row)
+        form.addLayout(token_row)
         self.token_help = wrapped_label("Keep your access token private. It is saved locally when you click Save.")
-        outer.addWidget(self.token_help)
+        form.addWidget(self.token_help)
         self.token.textChanged.connect(self.update_token_controls)
         self.update_token_controls()
 
-        generate_row = QHBoxLayout()
-        generate_row.setSpacing(12)
         self.generate_button = QPushButton("Generate token…")
         self.generate_button.setAutoDefault(False)
         self.generate_button.setToolTip("Pair locally with DIRIGERA using its physical action button")
         self.generate_button.clicked.connect(self.generate_token)
-        generate_row.addWidget(self.generate_button)
-        generate_row.addWidget(wrapped_label("Pair with your hub to obtain a new access token."), 1)
-        outer.addLayout(generate_row)
+        form.addLayout(wrapping_pair(self.generate_button,
+                                      wrapped_label("Pair with your hub to obtain a new access token.")))
         # Reserve native font-aware sizes in the independent button rows.
         for button in (self.show_token_button, self.copy_token_button, self.generate_button):
             button.setMinimumHeight(max(32, button.sizeHint().height(), button.fontMetrics().height() + 12))
@@ -577,13 +691,14 @@ class ConnectionDialog(QDialog):
             "reliably after restarts. Refer to your router's manual for instructions.")
         note_text.addWidget(self.ip_note)
         note_layout.addLayout(note_text, 1)
-        outer.addWidget(note)
-        outer.addStretch()
+        form.addWidget(note)
+        form.addStretch()
         outer.addWidget(section_divider())
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.check_accept)
         buttons.rejected.connect(self.reject)
         outer.addWidget(buttons)
+        fit_window(self, 82, scroll=scroll)
 
     def reset_address_help(self, *_):
         self.address_help.setText("Find the hub's local IP address in your router's connected-device list.")
@@ -643,18 +758,18 @@ class ApprovalDialog(QDialog):
     def __init__(self, parent, lights, sensors, approved_lights, approved_sensors):
         super().__init__(parent)
         self.setWindowTitle("Choose my lights and sensors")
-        self.resize(620, 560)
-        layout = QVBoxLayout(self)
-        message = QLabel(
+        outer, _, layout = scrollable_form(self)
+        message = wrapped_label(
             "Only check devices that belong to you. Room headings cannot be checked, "
             "so selecting a whole shared room accidentally is impossible.\n"
             "New devices always start unapproved. Sensor readings are read-only."
         )
-        message.setWordWrap(True)
         layout.addWidget(message)
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Device", "Status"])
-        self.tree.setColumnWidth(0, 400)
+        self.tree.header().setStretchLastSection(False)
+        self.tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         layout.addWidget(self.tree)
         self._populate("LIGHTS", lights, approved_lights)
         self._populate("CLIMATE SENSORS (read-only)", sensors, approved_sensors)
@@ -662,9 +777,10 @@ class ApprovalDialog(QDialog):
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.check_save)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        outer.addWidget(buttons)
         self.selection_lights = {}
         self.selection_sensors = {}
+        fit_window(self, 74, 34)
 
     def _populate(self, kind, devices, approvals):
         section = QTreeWidgetItem(self.tree, [kind, ""])
@@ -673,6 +789,7 @@ class ApprovalDialog(QDialog):
             grouped[(d.room_id, d.room_name)].append(d)
         for (rid, name), members in sorted(grouped.items(), key=lambda item: item[0][1].casefold()):
             room_item = QTreeWidgetItem(section, [f"{name} ({len(members)})", ""])
+            room_item.setToolTip(0, room_item.text(0))
             # Deliberately no checkbox on room headings, even in shared rooms.
             for device in members:
                 status = "Online" if device.reachable else "Offline"
@@ -685,6 +802,8 @@ class ApprovalDialog(QDialog):
                     if values:
                         status += " · " + " / ".join(values)
                 child = QTreeWidgetItem(room_item, [device.name, status])
+                child.setToolTip(0, device.name)
+                child.setToolTip(1, status)
                 child.setFlags(child.flags() | Qt.ItemFlag.ItemIsUserCheckable)
                 child.setData(0, Qt.ItemDataRole.UserRole, ("sensor" if kind.startswith("CLIMATE") else "light", device.id, device.room_id))
                 child.setCheckState(0, Qt.CheckState.Checked if approvals.get(device.id) == device.room_id else Qt.CheckState.Unchecked)
@@ -701,16 +820,18 @@ class ApprovalDialog(QDialog):
                         kind, device_id, rid = item.data(0, Qt.ItemDataRole.UserRole)
                         (sensors if kind == "sensor" else lights)[device_id] = rid
                         names.append(f"• {kind}: {room.text(0)} / {item.text(0)}")
-        summary = "\n".join(names[:18])
-        if len(names) > 18:
-            summary += f"\n…and {len(names) - 18} more"
-        reply = QMessageBox.question(
-            self, "Confirm selection",
-            f"Approve {len(lights)} light(s) for control and {len(sensors)} sensor(s) for viewing?\n\n"
-            f"{summary or 'Nothing selected: all controls remain disabled.'}",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if reply == QMessageBox.StandardButton.Yes:
+        summary = "\n".join(names) or "Nothing selected: all controls remain disabled."
+        dialog, layout = text_dialog(self, "Confirm selection", summary)
+        layout.insertWidget(0, wrapped_label(
+            f"Approve {len(lights)} light(s) for control and {len(sensors)} sensor(s) for viewing?"))
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Yes | QDialogButtonBox.StandardButton.No)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        fit_window(dialog, 70, min(26, max(12, len(names) + 7)))
+        reply = dialog.exec()
+        dialog.deleteLater()
+        if reply == QDialog.DialogCode.Accepted:
             self.selection_lights, self.selection_sensors = lights, sensors
             self.accept()
 
@@ -761,24 +882,23 @@ class IconPickerDialog(QDialog):
     def __init__(self, parent, initial):
         super().__init__(parent)
         self.setWindowTitle("Choose tray icon")
-        self.resize(700, 530)
-        outer = QVBoxLayout(self)
+        outer, _, layout = scrollable_form(self)
         self.search = QLineEdit()
         self.search.setPlaceholderText("Filter icon names, e.g. weather, display, brightness…")
-        outer.addWidget(self.search)
+        layout.addWidget(self.search)
         self.items = QListWidget()
         self.items.setViewMode(QListWidget.ViewMode.IconMode)
         self.items.setResizeMode(QListWidget.ResizeMode.Adjust)
         self.items.setIconSize(QSize(36, 36))
-        self.items.setGridSize(QSize(154, 79))
+        self._size_icon_grid()
         self.items.setWordWrap(True)
         self.items.setUniformItemSizes(True)
-        outer.addWidget(self.items)
+        layout.addWidget(self.items, 1)
         self.chosen = initial
         theme, found = discover_system_icons()
         qt_resolves_active_theme = QIcon.themeName().casefold() == theme.casefold()
-        label = QLabel(f"Current KDE icon theme: {theme}  ·  {len(found)} available icons")
-        outer.insertWidget(0, label)
+        label = wrapped_label(f"Current KDE icon theme: {theme}  ·  {len(found)} available icons")
+        layout.insertWidget(0, label)
         for name, path in sorted(found.items()):
             # If a pip-provided Qt platform plugin is not using KDE's active
             # theme, show a preview from the selected KDE pack, not Breeze.
@@ -789,21 +909,36 @@ class IconPickerDialog(QDialog):
                 icon = QIcon.fromTheme(name)
             item = QListWidgetItem(icon, name)
             item.setData(Qt.ItemDataRole.UserRole, name)
+            item.setToolTip(name)
             self.items.addItem(item)
             if name == initial:
                 self.items.setCurrentItem(item)
         self.search.textChanged.connect(self.filter_items)
         self.items.itemDoubleClicked.connect(self.accept_choice)
         if self.items.count() == 0:
-            outer.addWidget(QLabel("No theme icons found. Check KDE System Settings → Colors & Themes → Icons."))
+            layout.addWidget(wrapped_label("No theme icons found. Check KDE System Settings → Colors & Themes → Icons."))
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        choose_file = buttons.addButton("Choose file…", QDialogButtonBox.ButtonRole.ActionRole)
+        choose_file = QPushButton("Choose file…")
+        choose_file.setAutoDefault(False)
         choose_file.clicked.connect(self.choose_file)
-        default = buttons.addButton("Use default lamp", QDialogButtonBox.ButtonRole.ActionRole)
+        default = QPushButton("Use default lamp")
+        default.setAutoDefault(False)
         default.clicked.connect(self.choose_default)
         buttons.accepted.connect(self.accept_choice)
         buttons.rejected.connect(self.reject)
+        outer.addLayout(wrapping_pair(choose_file, default))
         outer.addWidget(buttons)
+        fit_window(self, 80, 34)
+
+    def _size_icon_grid(self):
+        metrics = self.items.fontMetrics()
+        self.items.setGridSize(QSize(metrics.horizontalAdvance("0") * 20,
+                                     self.items.iconSize().height() + metrics.lineSpacing() * 3))
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if event.type() in (QEvent.Type.FontChange, QEvent.Type.StyleChange) and hasattr(self, "items"):
+            self._size_icon_grid()
 
     def filter_items(self, term):
         term = term.strip().casefold()
@@ -916,48 +1051,27 @@ class TraySettingsDialog(QDialog):
     def __init__(self, parent, icon_name, room_id, rooms, default_icon=None):
         super().__init__(parent)
         self.setWindowTitle("System tray settings")
-        self.setMinimumWidth(600)
-        self.resize(730, 570)
         self.icon_name = icon_name
         self._default_icon = default_icon
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
-        layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+        outer, scroll, layout = scrollable_form(self)
 
-        def heading(text):
-            label = QLabel(text)
-            font = label.font()
-            font.setBold(True)
-            if font.pointSize() > 0:
-                font.setPointSize(font.pointSize() + 1)
-            label.setFont(font)
-            return label
-
-        def description(text):
-            label = QLabel(text)
-            label.setWordWrap(True)
-            return label
-
-        def separator():
-            line = QFrame()
-            line.setFrameShape(QFrame.Shape.HLine)
-            line.setFrameShadow(QFrame.Shadow.Sunken)
-            return line
-
-        layout.addWidget(heading("Tray controls"))
+        layout.addWidget(section_heading("Tray controls"))
         self.room = QComboBox()
+        self.room.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.room.setAccessibleName("Tray control selection")
+        self.room.currentTextChanged.connect(self.room.setToolTip)
         self.room.setPlaceholderText("Selected room unavailable" if room_id else "Choose lights to control")
         self.room.addItem("All approved lights", ALL_APPROVED)
         for rid, name in sorted(rooms.items(), key=lambda p: p[1].casefold()):
             self.room.addItem(name, rid)
+            self.room.setItemData(self.room.count() - 1, name, Qt.ItemDataRole.ToolTipRole)
         idx = self.room.findData(room_id)
         self.room.setCurrentIndex(idx)
         layout.addWidget(self.room)
-        layout.addWidget(description("Choose a room or all approved lights for tray controls and the dynamic icon."))
-        layout.addWidget(separator())
+        layout.addWidget(wrapped_label("Choose a room or all approved lights for tray controls and the dynamic icon."))
+        layout.addWidget(section_divider())
 
-        layout.addWidget(heading("Tray appearance"))
+        layout.addWidget(section_heading("Tray appearance"))
         appearance = QFrame()
         appearance.setFrameShape(QFrame.Shape.StyledPanel)
         appearance_layout = QVBoxLayout(appearance)
@@ -976,14 +1090,15 @@ class TraySettingsDialog(QDialog):
         icon_row.addWidget(self.icon_preview, alignment=Qt.AlignmentFlag.AlignTop)
         details = QVBoxLayout()
         details.setSpacing(6)
-        self.icon_label = QLabel()
-        self.icon_label.setTextFormat(Qt.TextFormat.PlainText)
-        self.icon_label.setWordWrap(True)
+        self.icon_label = wrapped_label("")
+        policy = self.icon_label.sizePolicy()
+        policy.setHorizontalPolicy(QSizePolicy.Policy.Ignored)
+        self.icon_label.setSizePolicy(policy)
         font = self.icon_label.font()
         font.setBold(True)
         self.icon_label.setFont(font)
         details.addWidget(self.icon_label)
-        self.icon_status = description("")
+        self.icon_status = wrapped_label("")
         details.addWidget(self.icon_status)
         details.addStretch()
         icon_row.addLayout(details, stretch=1)
@@ -992,14 +1107,14 @@ class TraySettingsDialog(QDialog):
         # Give the buttons their own full-width widget. The outer layout must
         # reserve their height independently of the fixed-size icon preview.
         action_row = QWidget(appearance)
-        actions = QHBoxLayout(action_row)
-        actions.setContentsMargins(0, 0, 0, 0)
-        actions.setSpacing(8)
-        self.browse_button = QPushButton("Browse system icons…")
+        actions = WrappingLayout()
+        action_row.setLayout(actions)
+        self.browse_button = QPushButton("Browse icons…")
         self.browse_button.setAutoDefault(False)
         self.browse_button.clicked.connect(self.pick_icon)
         actions.addWidget(self.browse_button)
-        self.restore_button = QPushButton("Restore default dynamic icon")
+        self.restore_button = QPushButton("Restore default icon")
+        self.restore_button.setAccessibleName("Restore default dynamic icon")
         self.restore_button.setAutoDefault(False)
         self.restore_button.clicked.connect(self.restore_default_icon)
         actions.addWidget(self.restore_button)
@@ -1011,20 +1126,16 @@ class TraySettingsDialog(QDialog):
         for button in icon_buttons:
             button.setMinimumHeight(button_height)
             button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        actions.addStretch()
-        action_row.setMinimumHeight(button_height)
-        action_row.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         appearance_layout.addWidget(action_row)
 
         # Reserve a separate notice block, with a genuine 12px gap above it.
         notice = QWidget(appearance)
-        notice.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         notice_row = QHBoxLayout(notice)
         notice_row.setContentsMargins(0, 0, 0, 0)
         notice_row.setSpacing(8)
         self.icon_notice_symbol = QLabel()
         notice_row.addWidget(self.icon_notice_symbol, alignment=Qt.AlignmentFlag.AlignTop)
-        self.icon_notice = description(
+        self.icon_notice = wrapped_label(
             "Custom icons do not reflect whether your lights are on or off. "
             "Restore the default Lysnav icon to re-enable dynamic lighting status."
         )
@@ -1032,44 +1143,37 @@ class TraySettingsDialog(QDialog):
         appearance_layout.addWidget(notice)
         layout.addWidget(appearance)
 
-        layout.addWidget(heading("Mouse controls"))
-        controls = QGridLayout()
-        controls.setContentsMargins(4, 0, 0, 0)
-        controls.setHorizontalSpacing(12)
-        controls.setVerticalSpacing(8)
-        controls.setColumnStretch(2, 1)
+        layout.addWidget(section_heading("Mouse controls"))
+        controls = wrapping_form()
         self._gesture_icons = []
-        for row, (name, explanation, middle_click) in enumerate((
+        for name, explanation, middle_click in (
             ("Scroll", "Adjust brightness by 5% per notch for approved lights already on.", False),
             ("Middle-click", "Toggle the selected approved lights together.", True),
-        )):
+        ):
+            title = QWidget()
+            title_layout = QHBoxLayout(title)
+            title_layout.setContentsMargins(0, 0, 0, 0)
             glyph = QLabel()
             glyph.setPixmap(mouse_control_pixmap(self.palette(), middle_click))
             self._gesture_icons.append((glyph, middle_click))
-            controls.addWidget(glyph, row, 0, Qt.AlignmentFlag.AlignVCenter)
-            controls.addWidget(QLabel(name), row, 1, Qt.AlignmentFlag.AlignVCenter)
-            controls.addWidget(description(explanation), row, 2)
+            title_layout.addWidget(glyph)
+            title_layout.addWidget(QLabel(name))
+            controls.addRow(title, wrapped_label(explanation))
         layout.addLayout(controls)
-        layout.addWidget(description("Only approved lights are affected by these controls."))
+        layout.addWidget(wrapped_label("Only approved lights are affected by these controls."))
         layout.addStretch()
-        layout.addWidget(separator())
-
-        footer = QHBoxLayout()
+        outer.addWidget(section_divider())
         inspect = QPushButton("Input diagnostics…")
         inspect.setAutoDefault(False)
         inspect.clicked.connect(lambda: parent.show_tray_diagnostics(dialog_parent=self))
-        footer.addWidget(inspect)
-        footer.addStretch()
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         buttons.button(QDialogButtonBox.StandardButton.Save).setDefault(True)
-        footer.addWidget(buttons)
-        layout.addLayout(footer)
+        outer.addLayout(wrapping_pair(inspect, buttons))
         self.room.currentIndexChanged.connect(self.update_icon_preview)
         self.update_icon_preview()
-        # Let Qt derive the minimum height from font metrics and wrapped text.
-        # Never force a fixed dialog height on larger desktop fonts.
+        fit_window(self, 84, scroll=scroll)
 
     def update_icon_preview(self):
         custom = custom_tray_qicon(self.icon_name)
@@ -1119,7 +1223,6 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(APP_NAME)
-        self.resize(800, 660)
         self.config = read_config()
         self.lights = []
         self.sensors = []
@@ -1162,11 +1265,9 @@ class MainWindow(QMainWindow):
 
         central = QWidget()
         self.setCentralWidget(central)
-        layout = QVBoxLayout(central)
-        header = QHBoxLayout()
-        heading = QLabel("Lysnav  /  My lights")
-        heading.setStyleSheet("font-weight: 700; font-size: 19px; padding: 5px 0")
-        header.addWidget(heading, stretch=1)
+        _, _, layout = scrollable_form(central)
+        layout.addWidget(section_heading("Lysnav  /  My lights"))
+        header = WrappingLayout()
         self.approvals_btn = QPushButton("Choose devices")
         self.approvals_btn.clicked.connect(self.choose_devices)
         self.approvals_btn.setEnabled(False)
@@ -1187,17 +1288,19 @@ class MainWindow(QMainWindow):
         # Ctrl+Q remains an emergency quit shortcut if Plasma's tray is down.
         layout.addLayout(header)
 
-        self.explainer = QLabel("Only approved bulbs receive commands. Room controls never affect unapproved bulbs; climate sensors are read-only.")
-        self.explainer.setWordWrap(True)
+        self.explainer = wrapped_label("Only approved lights can be controlled. Climate sensors are read-only.")
         layout.addWidget(self.explainer)
         self.tabs = QTabWidget()
+        self.tabs.setMinimumHeight(self.tabs.fontMetrics().lineSpacing() * 6)
+        self.tabs.setElideMode(Qt.TextElideMode.ElideRight)
         layout.addWidget(self.tabs, stretch=1)
-        welcome = QLabel("Connect to DIRIGERA and choose your lights to begin.")
+        welcome = wrapped_label("Connect to DIRIGERA and choose your lights to begin.")
         welcome.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.tabs.addTab(welcome, "Start")
-        self.status = QLabel("No hub configured")
+        self.status = wrapped_label("No hub configured")
         self.status.setObjectName("status")
         layout.addWidget(self.status)
+        fit_window(self, 94, 42)
         self._create_tray()
         if self.config.get("ip") and self.config.get("token"):
             self.start_worker()
@@ -1421,6 +1524,7 @@ class MainWindow(QMainWindow):
         self._room_power_action = menu.addAction("Toggle selected lights (middle-click)", self.on_tray_middle)
         menu.addAction("Refresh", self.refresh)
         self._room_menu = menu.addMenu("Tray controls for…")
+        self._room_menu.setToolTipsVisible(True)
         self._room_menu.triggered.connect(self.room_action_triggered)
         self._menu_rooms = None
         menu.addAction("Tray settings / change icon…", self.change_tray_settings)
@@ -1444,6 +1548,7 @@ class MainWindow(QMainWindow):
             for room_id, name in choices:
                 action = self._room_menu.addAction(name)
                 action.setData(room_id)
+                action.setToolTip(name)
                 action.setCheckable(True)
             self._menu_rooms = rooms
         for action in self._room_menu.actions():
@@ -1482,10 +1587,8 @@ class MainWindow(QMainWindow):
         dialog = QDialog(self)
         dialog.setWindowTitle(f'About {APP_NAME}')
         dialog.setWindowIcon(self.windowIcon())
-        dialog.resize(560, 490)
-        layout = QVBoxLayout(dialog)
-        heading = QLabel(f'{APP_NAME}  ·  {VERSION}')
-        heading.setStyleSheet('font-size: 20px; font-weight: bold')
+        outer, _, layout = scrollable_form(dialog)
+        heading = section_heading(f'{APP_NAME}  ·  {VERSION}')
         logo = QLabel()
         logo.setPixmap(QIcon(str(Path(__file__).parent / "assets" / "lysnav-logo.svg")).pixmap(
             QSize(56, 56), dialog.devicePixelRatioF()))
@@ -1539,8 +1642,10 @@ class MainWindow(QMainWindow):
             layout.addWidget(support, alignment=Qt.AlignmentFlag.AlignHCenter)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.rejected.connect(dialog.accept)
-        layout.addWidget(buttons)
+        outer.addWidget(buttons)
+        fit_window(dialog, 72, 32)
         dialog.exec()
+        dialog.deleteLater()
 
     def show_tray_diagnostics(self, dialog_parent=None):
         bulbs = tray_power_targets(self.lights, self.config["approved"], self.config.get("tray_room"))
@@ -1567,7 +1672,13 @@ class MainWindow(QMainWindow):
             "signal bridge has failed. If both increase, inspect the tray selection "
             "and 'On and dimmable' count. Middle-click and menu use separate methods."
         )
-        QMessageBox.information(dialog_parent or self, "System tray diagnostics", message)
+        dialog, layout = text_dialog(dialog_parent or self, "System tray diagnostics", message)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        fit_window(dialog, 80, 25)
+        dialog.exec()
+        dialog.deleteLater()
 
     def _tray_feedback(self, text):
         """Immediate local feedback, displayed BEFORE sending the hub command."""
@@ -1933,7 +2044,8 @@ class MainWindow(QMainWindow):
                 column.addWidget(box)
             column.addStretch()
             scroll.setWidget(content)
-            self.tabs.addTab(scroll, room_name)
+            tab = self.tabs.addTab(scroll, room_name)
+            self.tabs.setTabToolTip(tab, room_name)
         climate = approved_climate(self.sensors, self.config["approved_sensors"])
         if climate:
             scroll = QScrollArea()
