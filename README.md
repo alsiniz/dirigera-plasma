@@ -15,13 +15,13 @@ Control your lights from the desktop or system tray, see room temperature and hu
 
 > **Lysnav v1.0.5 is available as a Linux x86_64 AppImage.** Dialogs adapt to larger fonts and smaller displays, and the colour temperature slider previews the selected Kelvin value. The Flatpak is still undergoing runtime testing.
 
-The screenshots on this page show the pre-rebrand release.
+App screenshots use sample rooms and devices.
 
 <p align="center">
   <img src="docs/screenshots/main-window.png" alt="Lysnav for KDE Plasma's main window showing approved room and individual light controls" width="900">
 </p>
 
-<p align="center"><sub>Room-wide and individual light controls, styled by KDE Plasma.</sub></p>
+<p align="center"><sub>Room-wide and individual light controls.</sub></p>
 
 ## Why Lysnav for KDE Plasma?
 
@@ -46,13 +46,21 @@ Move the colour wheel to preview changes immediately on your approved RGB lights
   <img src="docs/screenshots/colour-wheel.png" alt="Live colour wheel for RGB light control" width="520">
 </p>
 
+### Climate readings
+
+<p align="center">
+  <img src="docs/screenshots/climate.png" alt="Climate tab showing temperature, humidity, and battery for two approved sensors" width="740">
+</p>
+
 ### At a glance, without opening a window
 
 A hover reveals room climate readings. Scroll over the tray icon to change brightness, middle-click to toggle your selected approved lights, or right-click for native Plasma actions.
 
+These two tray screenshots show the pre-rebrand release.
+
 | Climate readings on hover | Native Plasma tray menu |
 | :---: | :---: |
-| <img src="docs/screenshots/tray-tooltip.png" alt="KDE Plasma tray tooltip showing temperature, humidity and shortcuts" width="395"> | <img src="docs/screenshots/tray-menu.png" alt="Native KDE Plasma tray context menu" width="270"> |
+| <img src="docs/screenshots/tray-tooltip.png" alt="KDE Plasma tray tooltip showing temperature, humidity and shortcuts" width="395"> | <img src="docs/screenshots/tray-menu.png" alt="Native KDE Plasma tray context menu" width="261"> |
 
 ## Requirements
 
@@ -108,7 +116,11 @@ The app is **authorizing access to your existing hub**, not pairing the light bu
 **Tip:** Reserve a consistent IP address for DIRIGERA in your router's DHCP settings so the hub remains reachable at the saved address. Router instructions vary by manufacturer.
 
 <p align="center">
-  <img src="docs/screenshots/gui-pairing.png" alt="In-app token generation dialog guiding the user through authorizing Lysnav for KDE Plasma with the physical hub button" width="520">
+  <img src="docs/screenshots/hub-settings.png" alt="Hub settings with a sample address, masked access token, and DHCP reservation guidance" width="690">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/gui-pairing.png" alt="Generate token dialog showing the hub action button and the Continue step" width="654">
 </p>
 
 > **Verified:** The AppImage's GUI pairing process succeeded from a clean configuration on Bazzite. Flatpak pairing remains untested.
@@ -124,6 +136,10 @@ The app is **authorizing access to your existing hub**, not pairing the light bu
 | **Right-click** | Open the native Plasma menu for quick actions, settings, and Quit. |
 
 Brightness scrolling shows a brief on-screen percentage and combines rapid wheel input before sending the command. In **Tray settings**, choose a room or **All approved lights**. The default Table Lamp follows the panel theme, turns orange when any light in that selection is on, and stays monochrome when they are all off. The launcher and application window always use the full-colour Lysnav logo. The **Tray appearance** section previews your selection and lets you browse the current KDE icon theme or choose your own SVG/PNG. Custom icons do not reflect lighting power; use **Restore default icon** to re-enable the live indicator. Save applies the selection and Cancel leaves it unchanged. Existing room and icon choices are kept on upgrade. If you previously used Automatic with approvals in more than one room, choose a tray selection.
+
+<p align="center">
+  <img src="docs/screenshots/tray-settings.png" alt="Tray settings with Living room selected and a preview of the orange default lamp" width="680">
+</p>
 
 For finer control, open the window to change individual bulbs or approved bulbs within a room. The **Climate** tab provides read-only sensor information, including combined temperature and humidity data from supported split-endpoint devices such as IKEA TIMMERFLOTTE.
 
