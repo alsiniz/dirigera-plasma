@@ -21,7 +21,7 @@ def literals(source: str) -> set[str]:
 class PresentationTests(unittest.TestCase):
     def test_public_support_link_and_version(self):
         self.assertEqual(KOFI_URL, 'https://ko-fi.com/alsiniz')
-        self.assertEqual(VERSION, '1.0.3')
+        self.assertEqual(VERSION, '1.0.4')
 
     def test_brightness_osd_requests_no_icon(self):
         tree = ast.parse((ROOT / 'tray_sni.py').read_text())
@@ -46,7 +46,7 @@ class PresentationTests(unittest.TestCase):
         self.assertNotIn('Choose devices…', values)
         self.assertNotIn('Tray settings…', values)
         contents = (ROOT / 'app.py').read_text()
-        self.assertIn('Toggle all approved lights in the selected room.', contents)
+        self.assertIn('Toggle the selected approved lights together.', contents)
         self.assertIn('Adjust brightness by 5% per notch for approved lights already on.', contents)
         self.assertIn('Custom icons do not reflect whether your lights are on or off.', contents)
         self.assertIn('DHCP reservation', contents)

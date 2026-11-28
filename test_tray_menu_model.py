@@ -1,4 +1,5 @@
 import unittest
+from core import ALL_APPROVED
 from tray_menu_model import build_menu, get_node, menu_properties, layout_for
 
 
@@ -23,8 +24,16 @@ class MenuTests(unittest.TestCase):
         self.assertNotIn('5%', serialized)
         self.assertEqual(get_node(self.menu, 100)['action'], 'room:room-one')
 
+    def test_all_approved_scope_is_selectable(self):
+        menu = build_menu({'room-one': 'My room'}, ALL_APPROVED,
+                          power_available=True, brightness_available=True, native_ready=True)
+        all_lights = get_node(menu, 10)
+        self.assertEqual(all_lights['action'], f'room:{ALL_APPROVED}')
+        self.assertTrue(all_lights['checked'])
+        self.assertFalse(get_node(menu, 100)['checked'])
+
     def test_toggle_disabled_if_no_eligible_lights(self):
-        menu = build_menu({}, '', power_available=False,
+        menu = build_menu({}, None, power_available=False,
                           brightness_available=False, native_ready=False)
         self.assertFalse(get_node(menu, 2)['enabled'])
         self.assertIsNone(get_node(menu, 100))

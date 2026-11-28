@@ -7,7 +7,7 @@ import tracemalloc
 import sys
 import os
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 try:
@@ -17,7 +17,7 @@ try:
     from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMenu, QScrollArea, QDialog, QDialogButtonBox, QLineEdit, QSystemTrayIcon
     from shiboken6 import isValid
     from app import panel_is_dark, IconPickerDialog, ClickToJumpSlider, TraySettingsDialog, ConnectionDialog, TokenPairingDialog, hub_action_svg, MainWindow
-    from core import EnvironmentInfo, LightInfo
+    from core import ALL_APPROVED, EnvironmentInfo, LightInfo
 except ImportError:
     if os.environ.get('LYSNAV_REQUIRE_QT_TESTS') == '1':
         raise
@@ -108,7 +108,7 @@ class TraySettingsTests(unittest.TestCase):
                             '<rect width="48" height="48" fill="#176a95"/></svg>')
             default = QIcon(str(Path(__file__).parent / "assets" / "tray-dark-on.svg"))
             dialog = TraySettingsDialog(parent, str(path), "r1", {"r1": "Room"},
-                                        default_icon=lambda: default)
+                                        default_icon=lambda selection: default)
             self.addCleanup(dialog.deleteLater)
             self.assertTrue(dialog.restore_button.isEnabled())
             self.assertEqual(dialog.icon_status.text(), "Dynamic lighting status disabled")
@@ -390,11 +390,12 @@ class RefreshLifetimeTests(unittest.TestCase):
         cls.app = QApplication.instance() or QApplication([])
 
     def setUp(self):
-        config = dict(ip='test', token='test', approved={'lamp': 'room'}, approved_sensors={'sensor': 'room'})
+        config = dict(ip='test', token='test', approved={'lamp': 'room'}, approved_sensors={'sensor': 'room'},
+                      tray_room='room')
         self.enterContext(patch('app.read_config', return_value=config))
-        self.enterContext(patch.object(MainWindow, 'start_worker'))
         self.enterContext(patch.object(MainWindow, '_create_native_tray'))
-        self.window = MainWindow()
+        with patch.object(MainWindow, 'start_worker'):
+            self.window = MainWindow()
         self.addCleanup(self.flush_deletions)
         self.addCleanup(self.window.deleteLater)
         self.light = LightInfo('lamp', 'Desk', 'room', 'Study', True, ('isOn', 'lightLevel'),
@@ -404,27 +405,71 @@ class RefreshLifetimeTests(unittest.TestCase):
     def flush_deletions(self):
         QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 
-    def test_tray_status_is_global_approved_and_does_not_replace_app_logo(self):
+    def test_failed_first_hub_read_retries_and_updates_tray_icon(self):
         window = self.window
-        window.config["tray_room"] = "other"
+        self.enterContext(patch("dirigera.Hub"))
+        snapshot = self.enterContext(patch("app.snapshot", side_effect=TimeoutError("Hub unreachable")))
+        self.enterContext(patch("app.environment_snapshot", return_value=[]))
+        window.start_worker()
+        self.addCleanup(window.worker.wait)
+        self.addCleanup(window.worker.stop)
+        self.addCleanup(window.refresh_timer.stop)
+
+        for _ in range(200):
+            if window.status.text().startswith("Request failed"):
+                break
+            QTest.qWait(10)
+        self.assertIn("Hub unreachable", window.status.text())
+        self.assertTrue(window.refresh_timer.isActive())
+
+        snapshot.side_effect = None
+        snapshot.return_value = [self.light]
+        window.refresh_timer.setInterval(25)
+        for _ in range(200):
+            if not window._tray_state_stale:
+                break
+            QTest.qWait(10)
+        self.assertFalse(window._tray_state_stale)
+        image = window._selected_qicon().pixmap(64, 64).toImage()
+        self.assertEqual(image.pixelColor(32, 25).name(), "#fe8019")
+
+    def test_tray_selection_controls_icon_and_middle_click_targets(self):
+        window = self.window
+        window.worker = MagicMock()
+        window.config["approved"].update({"other": "other-room", "relocated": "room"})
         unapproved = replace(self.light, id="unapproved")
-        moved = replace(self.light, room_id="moved")
+        moved = replace(self.light, id="relocated", room_id="moved")
         off = replace(self.light, on=False)
+        other_room = replace(self.light, id="other", room_id="other-room", room_name="Office")
         with patch('app.panel_is_dark', return_value=True):
             def shade():
                 return window._selected_qicon().pixmap(64, 64).toImage().pixelColor(32, 25).name()
             def app_shade():
                 return window.windowIcon().pixmap(64, 64).toImage().pixelColor(32, 20).name()
 
-            window.on_loaded(([off, unapproved, moved], [], ""))
+            window.on_loaded(([off, other_room, unapproved, moved], [], ""))
             self.assertEqual(shade(), "#ebdbb2")
             self.assertEqual(app_shade(), "#fe8019")
-            window.on_loaded(([self.light, unapproved], [], ""))
+            window.on_tray_middle()
+            window.worker.submit.assert_called_once_with("toggle", ["lamp"], "room")
+
+            dialog = TraySettingsDialog(window, "", "room", window._approved_rooms(),
+                                        default_icon=window._default_qicon)
+            self.addCleanup(dialog.deleteLater)
+            dialog.room.setCurrentIndex(dialog.room.findData(ALL_APPROVED))
+            self.assertEqual(dialog.icon_preview.pixmap().toImage().pixelColor(24, 18).name(), "#fe8019")
+            self.assertEqual(shade(), "#ebdbb2")
+
+            window.worker.submit.reset_mock()
+            with patch("app.write_config"):
+                window.set_tray_room(ALL_APPROVED)
             self.assertEqual(shade(), "#fe8019")
+            window.on_tray_middle()
+            window.worker.submit.assert_called_once_with("toggle", ["lamp", "other"], ALL_APPROVED)
             window.on_failed("offline")
             self.assertEqual(shade(), "#fe8019")
             self.assertIn("last known", window._tray_tooltip())
-            window.on_loaded(([off, unapproved], [], ""))
+            window.on_loaded(([off, unapproved, moved], [], ""))
             self.assertEqual(shade(), "#ebdbb2")
             self.assertNotIn("last known", window._tray_tooltip())
             window.on_loaded(([self.light], [], ""))
@@ -540,7 +585,7 @@ class RefreshLifetimeTests(unittest.TestCase):
         room, climate = (window.tabs.widget(i) for i in range(2))
         window.tabs.setCurrentIndex(1)
         submenu, = window._tray_menu.findChildren(QMenu)
-        automatic, study = submenu.actions()
+        all_lights, study = submenu.actions()
         for _ in range(20):
             window.on_loaded(([self.light], [self.sensor], ''))
             self.flush_deletions()
@@ -548,17 +593,17 @@ class RefreshLifetimeTests(unittest.TestCase):
         self.assertEqual(window.tabs.currentIndex(), 1)
         self.assertEqual(len(window.tabs.findChildren(QScrollArea)), 2)
         self.assertEqual(window._tray_menu.findChildren(QMenu), [submenu])
-        self.assertEqual(submenu.actions(), [automatic, study])
+        self.assertEqual(submenu.actions(), [all_lights, study])
         with patch('app.write_config'):
             study.trigger()
             self.assertEqual(window.config['tray_room'], 'room')
             self.assertTrue(study.isChecked())
-            automatic.trigger()
-            self.assertEqual(window.config['tray_room'], '')
-            self.assertTrue(automatic.isChecked())
+            all_lights.trigger()
+            self.assertEqual(window.config['tray_room'], ALL_APPROVED)
+            self.assertTrue(all_lights.isChecked())
         window.on_loaded(([replace(self.light, room_name='Office')], [], ''))
         self.flush_deletions()
-        self.assertEqual([a.text() for a in submenu.actions()], ['Automatic (one approved room)', 'Office'])
+        self.assertEqual([a.text() for a in submenu.actions()], ['All approved lights', 'Office'])
         window.on_loaded(([], [], ''))
         self.flush_deletions()
         self.assertEqual(len(submenu.actions()), 1)

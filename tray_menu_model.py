@@ -5,27 +5,29 @@ whose cursor position can be wrong or unavailable on Wayland.
 """
 from __future__ import annotations
 
+from core import ALL_APPROVED
+
 
 def node(ident, label='', action='', *, enabled=True, children=None, separator=False, checked=None):
     return dict(id=ident, label=label, action=action, enabled=bool(enabled),
                 children=list(children or []), separator=separator, checked=checked)
 
 
-def build_menu(rooms: dict[str, str], selected_room: str, *, power_available: bool,
+def build_menu(rooms: dict[str, str], selected_room: str | None, *, power_available: bool,
                brightness_available: bool, native_ready: bool) -> dict:
     """Native tray menu with approved-device actions only.
 
     Scrolling the tray icon already changes brightness. Repeated five-percent
     buttons don't belong in the context menu. Authorization stays in core.py.
     """
-    choices = [node(10, 'Automatic (one approved room)', 'room:', checked=not selected_room)]
+    choices = [node(10, 'All approved lights', f'room:{ALL_APPROVED}', checked=selected_room == ALL_APPROVED)]
     for i, (room_id, room_name) in enumerate(sorted(rooms.items(), key=lambda p: p[1].casefold())):
         choices.append(node(100 + i, room_name, f'room:{room_id}', checked=selected_room == room_id))
     return node(0, children=[
         node(1, 'Show controls', 'show'),
-        node(2, 'Toggle approved room lights', 'toggle', enabled=power_available),
+        node(2, 'Toggle selected lights', 'toggle', enabled=power_available),
         node(3, 'Refresh', 'refresh'),
-        node(4, 'Scroll brightness in…', children=choices),
+        node(4, 'Tray controls for…', children=choices),
         node(5, 'Tray settings / change icon…', 'settings'),
         node(7, 'About Lysnav for KDE Plasma…', 'about'),
         node(8, separator=True),
